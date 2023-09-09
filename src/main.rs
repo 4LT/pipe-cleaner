@@ -111,9 +111,13 @@ fn main() -> Result<(), String> {
         .map_err(|e| e.to_string())?;
     let (width, height) = window.size();
 
+    let backends = wgpu::util::backend_bits_from_env().unwrap_or_else(
+        wgpu::Backends::all
+    );
+
     let instance = wgpu::Instance::new(
         wgpu::InstanceDescriptor {
-            backends: wgpu::Backends::PRIMARY.union(wgpu::Backends::SECONDARY),
+            backends,
             dx12_shader_compiler: wgpu::Dx12Compiler::Fxc,
         }
     );
@@ -310,7 +314,7 @@ fn main() -> Result<(), String> {
         dimension: wgpu::TextureDimension::D2,
         format: wgpu::TextureFormat::Depth24Plus,
         usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-        view_formats: &[wgpu::TextureFormat::Depth24Plus],
+        view_formats: &[],
     };
 
     let mut depth_tex_view = device.create_texture(&depth_tex_desc)
@@ -321,12 +325,9 @@ fn main() -> Result<(), String> {
         format: wgpu::TextureFormat::Bgra8UnormSrgb,
         width,
         height,
-        present_mode: wgpu::PresentMode::Mailbox,
+        present_mode: wgpu::PresentMode::AutoNoVsync,
         alpha_mode: wgpu::CompositeAlphaMode::Opaque,
-        view_formats: [
-            wgpu::TextureFormat::Bgra8UnormSrgb,
-            wgpu::TextureFormat::Bgra8Unorm,
-        ].to_vec(),
+        view_formats: [].to_vec(),
     };
     surface.configure(&device, &surf_config);
 
