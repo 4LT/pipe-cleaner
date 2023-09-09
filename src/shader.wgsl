@@ -24,8 +24,8 @@ var<storage> inst_attrs: array<Instance>;
 @group(0) @binding(1)
 var<uniform> cam: CameraUniforms;
 
-let FOG = vec4<f32>(0.0, 0.0, 0.0, 0.9997);
-let POST_MULTIPLY = 1.7;
+const FOG = vec4<f32>(0.0, 0.0, 0.0, 0.9997);
+const POST_MULTIPLY = 1.7;
 
 @vertex
 fn vs_main(@builtin(instance_index) inst: u32, @location(0) pos: vec3<f32>) -> VertexToPixel {

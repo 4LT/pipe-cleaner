@@ -3,8 +3,8 @@ use std::thread::sleep;
 use std::time::Duration;
 use wgpu::SurfaceError;
 
-use sdl3::event::{Event, WindowEvent};
-use sdl3::keyboard::Keycode;
+use sdl2::event::{Event, WindowEvent};
+use sdl2::keyboard::Keycode;
 
 mod visual;
 
@@ -101,7 +101,7 @@ fn main() -> Result<(), String> {
         vertices: &circle_verts[..],
     };
 
-    let sdl_context = sdl3::init()?;
+    let sdl_context = sdl2::init()?;
     let video_subsystem = sdl_context.video()?;
     let window = video_subsystem
         .window("Raw Window Handle Example", 800, 600)
@@ -319,7 +319,7 @@ fn main() -> Result<(), String> {
         dimension: wgpu::TextureDimension::D2,
         format: wgpu::TextureFormat::Depth24Plus,
         usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-        view_formats: &[wgpu::TextureFormat::Rgba8Unorm],
+        view_formats: &[wgpu::TextureFormat::Depth24Plus],
     };
 
     let mut depth_tex_view = device.create_texture(&depth_tex_desc)
@@ -332,7 +332,10 @@ fn main() -> Result<(), String> {
         height,
         present_mode: wgpu::PresentMode::Mailbox,
         alpha_mode: wgpu::CompositeAlphaMode::Opaque,
-        view_formats: [wgpu::TextureFormat::Rgba8UnormSrgb].to_vec(),
+        view_formats: [
+            wgpu::TextureFormat::Bgra8UnormSrgb,
+            wgpu::TextureFormat::Bgra8Unorm,
+        ].to_vec(),
     };
     surface.configure(&device, &surf_config);
 
