@@ -205,7 +205,7 @@ impl Manager {
         let inst_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("instance_buffer"),
             size: max_instances as u64 * size_of::<[f32; 16]>() as u64,
-            usage: wgpu::BufferUsages::STORAGE
+            usage: wgpu::BufferUsages::VERTEX
                 | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });

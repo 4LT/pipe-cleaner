@@ -4,8 +4,10 @@ struct CameraUniforms {
 }
 
 struct Instance {
-    transform: mat3x4<f32>,
-    color: vec3<f32>,
+    @location(1) col0: vec4<f32>,
+    @location(2) col1: vec4<f32>,
+    @location(3) col2: vec4<f32>,
+    @location(4) color: vec3<f32>,
 }
 
 struct VertexToPixel {
@@ -19,18 +21,18 @@ struct FragOut {
 }
 
 @group(0) @binding(0)
-var<storage> inst_attrs: array<Instance>;
-
-@group(0) @binding(1)
 var<uniform> cam: CameraUniforms;
 
 const FOG = vec4<f32>(0.0, 0.0, 0.0, 0.9997);
 const POST_MULTIPLY = 1.7;
 
 @vertex
-fn vs_main(@builtin(instance_index) inst: u32, @location(0) pos: vec3<f32>) -> VertexToPixel {
-    let attributes = inst_attrs[inst];
-    let mdl2world = attributes.transform;
+fn vs_main(@location(0) pos: vec3<f32>, inst: Instance) -> VertexToPixel {
+    let mdl2world = mat3x4<f32>(
+        inst.col0,
+        inst.col1,
+        inst.col2,
+    );
     let world_pos = vec4<f32>(pos, 1.0) * mdl2world;
     let screen_pos = vec4<f32>(world_pos, 1.0) * cam.world2screen;
     let scale = cam.scale * vec3<f32>(1.0, 1.0, screen_pos.z);
@@ -39,7 +41,7 @@ fn vs_main(@builtin(instance_index) inst: u32, @location(0) pos: vec3<f32>) -> V
     var frag_in: VertexToPixel;
     frag_in.pos = out_pos;
     frag_in.color
-        = vec4<f32>(attributes.color, length(screen_pos) * cam.scale.z);
+        = vec4<f32>(inst.color, length(screen_pos) * cam.scale.z);
 
     return frag_in;
 }

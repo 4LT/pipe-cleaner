@@ -208,18 +208,6 @@ fn main() -> Result<(), String> {
                 binding: 0,
                 visibility: wgpu::ShaderStages::VERTEX,
                 ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Storage {
-                        read_only: true
-                    },
-                    has_dynamic_offset: false,
-                    min_binding_size: None,
-                },
-                count: None
-            },
-            wgpu::BindGroupLayoutEntry {
-                binding: 1,
-                visibility: wgpu::ShaderStages::VERTEX,
-                ty: wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Uniform,
                     has_dynamic_offset: false,
                     min_binding_size: None,
@@ -234,14 +222,6 @@ fn main() -> Result<(), String> {
         entries: &[
             wgpu::BindGroupEntry {
                 binding: 0,
-                resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
-                    buffer: mgr.instances(),
-                    offset: 0u64,
-                    size: None,
-                }),
-            },
-            wgpu::BindGroupEntry {
-                binding: 1,
                 resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
                     buffer: &uniform_buffer,
                     offset: 0u64,
@@ -258,6 +238,17 @@ fn main() -> Result<(), String> {
         attributes: &wgpu::vertex_attr_array![0 => Float32x3],
     };
 
+    let inst_layout = wgpu::VertexBufferLayout {
+        array_stride: std::mem::size_of::<[[f32; 4]; 4]>() as u64,
+        step_mode: wgpu::VertexStepMode::Instance,
+        attributes: &wgpu::vertex_attr_array![
+            1 => Float32x4,
+            2 => Float32x4,
+            3 => Float32x4,
+            4 => Float32x3,
+        ],
+    };
+
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         bind_group_layouts: &[&bind_group_layout],
         label: None,
@@ -267,7 +258,7 @@ fn main() -> Result<(), String> {
     let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         layout: Some(&pipeline_layout),
         vertex: wgpu::VertexState {
-            buffers: &[vert_layout],
+            buffers: &[vert_layout, inst_layout],
             module: &shader,
             entry_point: "vs_main",
         },
@@ -475,6 +466,7 @@ fn main() -> Result<(), String> {
 
             let indices = mgr.indices();
             let vertices = mgr.vertices();
+            let instances = mgr.instances();
 
             rpass.set_pipeline(&render_pipeline);
             rpass.set_bind_group(0, &bind_group, &[]);
@@ -483,6 +475,7 @@ fn main() -> Result<(), String> {
                 wgpu::IndexFormat::Uint32
             );
             rpass.set_vertex_buffer(0, vertices.slice(..));
+            rpass.set_vertex_buffer(1, instances.slice(..));
 
             mgr.ranges().for_each(|(idx_range, vtx_range)| {
                 rpass.draw_indexed(
