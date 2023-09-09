@@ -3,58 +3,10 @@ use std::thread::sleep;
 use std::time::Duration;
 use wgpu::SurfaceError;
 
-use sdl2::event::{Event, WindowEvent};
-use sdl2::keyboard::Keycode;
-
-use raw_window_handle::{
-    HasRawDisplayHandle,
-    HasRawWindowHandle,
-    RawDisplayHandle,
-    RawWindowHandle,
-    XlibWindowHandle,
-    XlibDisplayHandle,
-};
-use raw_window_handle_0_4_2::{
-    HasRawWindowHandle as HasRawWindowHandle_0_4_2,
-    RawWindowHandle as RawWindowHandle_0_4_2,
-};
+use sdl3::event::{Event, WindowEvent};
+use sdl3::keyboard::Keycode;
 
 mod visual;
-
-struct WindowWrapper<'a>(&'a sdl2::video::Window);
-
-unsafe impl<'a> HasRawWindowHandle for WindowWrapper<'a> {
-
-    fn raw_window_handle(&self) -> RawWindowHandle {
-        let WindowWrapper(window) = self;
-
-        match window.raw_window_handle() {
-            RawWindowHandle_0_4_2::Xlib(old_handle) => {
-                let mut new_handle = XlibWindowHandle::empty();
-                new_handle.visual_id = 0;
-                new_handle.window = old_handle.window;
-                RawWindowHandle::Xlib(new_handle)
-            },
-            _ => panic!("Unrecognized window handle")
-        }
-    }
-}
-
-unsafe impl<'a> HasRawDisplayHandle for WindowWrapper<'a> {
-    fn raw_display_handle(&self) -> RawDisplayHandle {
-        let WindowWrapper(window) = self;
-
-        match window.raw_window_handle() {
-            RawWindowHandle_0_4_2::Xlib(old_handle) => {
-                let mut new_handle = XlibDisplayHandle::empty();
-                new_handle.display = old_handle.display;
-                new_handle.screen = window.display_index().unwrap();
-                RawDisplayHandle::Xlib(new_handle)
-            },
-            _ => panic!("Unrecognized window handle")
-        }
-    }
-}
 
 struct Camera {
     pos: [f32; 3],
@@ -149,7 +101,7 @@ fn main() -> Result<(), String> {
         vertices: &circle_verts[..],
     };
 
-    let sdl_context = sdl2::init()?;
+    let sdl_context = sdl3::init()?;
     let video_subsystem = sdl_context.video()?;
     let window = video_subsystem
         .window("Raw Window Handle Example", 800, 600)
@@ -159,8 +111,13 @@ fn main() -> Result<(), String> {
         .map_err(|e| e.to_string())?;
     let (width, height) = window.size();
 
-    let instance = wgpu::Instance::new(wgpu::Backends::PRIMARY);
-    let surface = unsafe { instance.create_surface(&WindowWrapper(&window)) };
+    let instance = wgpu::Instance::new(
+        wgpu::InstanceDescriptor {
+            backends: wgpu::Backends::PRIMARY.union(wgpu::Backends::SECONDARY),
+            dx12_shader_compiler: wgpu::Dx12Compiler::Fxc,
+        }
+    );
+    let surface = unsafe { instance.create_surface(&window) }.unwrap();
     let adapter_opt = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
         power_preference: wgpu::PowerPreference::HighPerformance,
         force_fallback_adapter: false,
@@ -362,6 +319,7 @@ fn main() -> Result<(), String> {
         dimension: wgpu::TextureDimension::D2,
         format: wgpu::TextureFormat::Depth24Plus,
         usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+        view_formats: &[wgpu::TextureFormat::Rgba8Unorm],
     };
 
     let mut depth_tex_view = device.create_texture(&depth_tex_desc)
@@ -374,6 +332,7 @@ fn main() -> Result<(), String> {
         height,
         present_mode: wgpu::PresentMode::Mailbox,
         alpha_mode: wgpu::CompositeAlphaMode::Opaque,
+        view_formats: [wgpu::TextureFormat::Rgba8UnormSrgb].to_vec(),
     };
     surface.configure(&device, &surf_config);
 
@@ -388,7 +347,7 @@ fn main() -> Result<(), String> {
             match event {
                 Event::Window {
                     window_id,
-                    win_event: WindowEvent::SizeChanged(width, height),
+                    win_event: WindowEvent::Resized(width, height),
                     ..
                 } if window_id == window.id() => {
                     surf_config.width = width as u32;
