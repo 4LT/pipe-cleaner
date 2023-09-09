@@ -111,12 +111,7 @@ fn main() -> Result<(), String> {
         .map_err(|e| e.to_string())?;
     let (width, height) = window.size();
 
-    let instance = wgpu::Instance::new(
-        wgpu::InstanceDescriptor {
-            backends: wgpu::Backends::PRIMARY.union(wgpu::Backends::SECONDARY),
-            dx12_shader_compiler: wgpu::Dx12Compiler::Fxc,
-        }
-    );
+    let instance = wgpu::Instance::default();
     let surface = unsafe { instance.create_surface(&window) }.unwrap();
     let adapter_opt = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
         power_preference: wgpu::PowerPreference::HighPerformance,
