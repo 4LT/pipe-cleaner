@@ -32,6 +32,11 @@ impl Camera {
     }
 }
 
+struct Bullet {
+    pub instance: visual::ExternalInstRef<visual::PipePosition>,
+    pub ttl: i32,
+}
+
 fn circle_pts(vert_count: i32) -> Vec<[f32; 3]> {
     (0..vert_count).map(|i| { 
         let angle = (i as f32)/(vert_count as f32) * std::f32::consts::TAU;
@@ -93,6 +98,14 @@ fn main() -> Result<(), String> {
         vertices: &cube_verts[..],
     };
 
+    let bullet_mesh = visual::Mesh {
+        indices: &[0, 1],
+        vertices: &[
+            [0f32, 0f32, -0.3f32],
+            [0f32, 0f32, 0f32],
+        ],
+    };
+
     let circle_verts = circle_pts(20);
     let circle_indices = loop_indices(circle_verts.len() as u32);
 
@@ -148,7 +161,8 @@ fn main() -> Result<(), String> {
     let mut mgr_builder = visual::ManagerBuilder::new();
     let cube_cls = mgr_builder.register_class(cube_mesh);
     let circle_cls = mgr_builder.register_class(circle_mesh);
-    let mut mgr = mgr_builder.build(200u32, &device);
+    let bullet_cls = mgr_builder.register_class(bullet_mesh);
+    let mut mgr = mgr_builder.build(800u32, &device);
 
     let cube1 = mgr.create_instance(
         cube_cls,
@@ -178,6 +192,7 @@ fn main() -> Result<(), String> {
 
     let mut tmp_cubes = Vec::<visual::ExternalInstRef<visual::PipePosition>>::new();
     let mut tmp_angle = 0f32;
+    let mut tmp_bullets = Vec::<Bullet>::new();
 
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("shader"),
@@ -387,6 +402,20 @@ fn main() -> Result<(), String> {
                         if !tmp_cubes.is_empty() {
                             tmp_cubes.pop();
                         }
+                    } else if k == Keycode::Space {
+                        tmp_bullets.push(
+                            Bullet {
+                                instance: mgr.create_instance(
+                                    bullet_cls,
+                                    visual::PipePosition {
+                                        angle: cube1.borrow().position.angle,
+                                        depth: cube1.borrow().position.depth,
+                                    },
+                                    [1f32, 0f32, 1f32],
+                                ),
+                                ttl: 1000i32,
+                            }
+                        );
                     }
                 }
                 Event::KeyUp {
@@ -405,7 +434,7 @@ fn main() -> Result<(), String> {
             }
         }
 
-        let velocity = (right - left) * 0.003f32;
+        let velocity = (right - left) * 0.01f32;
 
         cube1.borrow_mut().position.angle+= velocity;
 
@@ -488,6 +517,16 @@ fn main() -> Result<(), String> {
         }
         queue.submit([encoder.finish()]);
         frame.present();
+
+        tmp_bullets = tmp_bullets.into_iter()
+            .map(|mut bullet| {
+                bullet.ttl-= 1i32;
+                bullet.instance.borrow_mut().position.depth+= 0.05f32;
+                bullet
+            })
+            .filter(|bullet| bullet.ttl > 0)
+            .collect();
+
         sleep(frame_duration);
     }
 
