@@ -1,11 +1,13 @@
 mod entity;
 mod visual;
+mod world;
 
 use entity::PipePosition;
 use sdl2::event::{Event, WindowEvent};
 use std::thread::sleep;
 use std::time::Duration;
 use visual::geo;
+use world::World;
 
 static FRAME_DURATION: f64 = 1f64 / 120f64;
 
@@ -14,12 +16,13 @@ fn main() -> Result<(), String> {
     let cube_indices = geo::cube_indices();
 
     let cube_mesh = visual::Mesh {
-        vertices: &cube_vertices[..],
-        indices: &cube_indices[..],
+        vertices: cube_vertices,
+        indices: cube_indices,
     };
 
+
     let mut vis_mgr_builder = visual::ManagerBuilder::new();
-    let cube_cls = vis_mgr_builder.register_class(cube_mesh);
+    let cube_model = vis_mgr_builder.register_class(cube_mesh);
     let mut ent_mgr = entity::Manager::default();
     let player = ent_mgr.create();
 
@@ -27,9 +30,10 @@ fn main() -> Result<(), String> {
         let mut player = player.borrow_mut();
         player.pos = PipePosition {
             angle: 0f32,
-            depth: 5f32,
+            depth: 1f32,
         };
-        player.model = cube_cls;
+        player.color = [0f32, 1f32, 1f32];
+        player.model = cube_model;
     }
 
     let sdl_context = sdl2::init()?;

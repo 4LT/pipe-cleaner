@@ -11,8 +11,14 @@ const IDENTITY: [f32; 12] = [
     1f32, 0f32, 0f32, 0f32, 0f32, 1f32, 0f32, 0f32, 0f32, 0f32, 1f32, 0f32,
 ];
 
+#[derive(Clone)]
+pub struct Mesh {
+    pub indices: Box<[u32]>,
+    pub vertices: Box<[[f32; 3]]>,
+}
+
 #[derive(Clone, Copy)]
-pub struct Mesh<'a> {
+pub struct BorrowedMesh<'a> {
     pub indices: &'a [u32],
     pub vertices: &'a [[f32; 3]],
 }
@@ -78,7 +84,7 @@ pub struct Model {
 
 impl Model {
     fn new(
-        mesh: Mesh<'_>,
+        mesh: Mesh,
         index_start: u32,
         index_buffer: &wgpu::Buffer,
         vertex_start: u32,
@@ -123,23 +129,23 @@ impl Model {
     }
 }
 
-pub struct ManagerBuilder<'m> {
-    meshes: Vec<Mesh<'m>>,
+pub struct ManagerBuilder {
+    meshes: Vec<Mesh>,
 }
 
-impl<'m> ManagerBuilder<'m> {
+impl ManagerBuilder {
     pub fn new() -> Self {
         Self { meshes: Vec::new() }
     }
 
-    pub fn register_class(&mut self, mesh: Mesh<'m>) -> usize {
+    pub fn register_class(&mut self, mesh: Mesh) -> usize {
         let class_idx = self.meshes.len();
         self.meshes.push(mesh);
         class_idx
     }
 
     pub fn build(self, max_instances: u32, device: &wgpu::Device) -> Manager {
-        Manager::new(&self.meshes[..], max_instances, device)
+        Manager::new(self.meshes.into(), max_instances, device)
     }
 }
 
@@ -152,14 +158,14 @@ pub struct Manager {
 }
 
 impl Manager {
-    fn new<'m>(
-        meshes: &[Mesh<'m>],
+    fn new(
+        meshes: Box<[Mesh]>,
         max_instances: u32,
         device: &wgpu::Device,
     ) -> Self {
         let (idx_ct_sum, vert_ct_sum) = meshes.iter().fold(
             (0u64, 0u64),
-            |(idx_ct_sum, vert_ct_sum), &mesh| {
+            |(idx_ct_sum, vert_ct_sum), mesh| {
                 (
                     idx_ct_sum + mesh.indices.len() as u64,
                     vert_ct_sum + mesh.vertices.len() as u64,
@@ -197,7 +203,7 @@ impl Manager {
 
         let mut models = Vec::new();
 
-        for &mesh in meshes {
+        for mesh in meshes {
             println!("Index Start: {}", index_start);
             println!("Vertex Start: {}", vertex_start);
 
