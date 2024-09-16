@@ -1,6 +1,8 @@
-use std::cell::Ref;
 use std::mem::size_of;
 use std::ops::Range;
+use std::borrow::Borrow;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 pub mod geo;
 mod renderer;
@@ -57,6 +59,44 @@ pub trait Instance {
         bytes
     }
 }
+
+impl<T: Instance> Instance for Rc<RefCell<T>> {
+    fn transform(&self) -> TransformMatrix {
+        RefCell::borrow(self).transform()
+    }
+
+    fn color(&self) -> Color {
+        RefCell::borrow(self).color()
+    }
+
+    fn model(&self) -> usize {
+        RefCell::borrow(self).model()
+    }
+
+    fn attributes(&self) -> Attributes {
+        RefCell::borrow(self).attributes()
+    }
+}
+
+/*
+impl<'a, T: AsRef<U>, U: Instance> Instance for T {
+    fn transform(&self) -> TransformMatrix {
+        self.as_ref().transform()
+    }
+
+    fn color(&self) -> Color {
+        self.as_ref().color()
+    }
+
+    fn model(&self) -> usize {
+        self.as_ref().model()
+    }
+
+    fn attributes(&self) -> Attributes {
+        self.as_ref().attributes()
+    }
+}
+*/
 
 #[derive(Clone, Copy)]
 pub struct WorldPosition(pub [f32; 3]);
@@ -239,7 +279,7 @@ impl Manager {
     pub fn update<'a>(
         &'_ mut self,
         queue: &'a wgpu::Queue,
-        instances: impl Iterator<Item = Ref<'a, dyn Instance>>,
+        instances: impl Iterator<Item = &'a dyn Instance>,
     ) -> Vec<(Range<u32>, Range<u32>)> {
         let mut attributes = vec![Vec::<Attributes>::new(); self.models.len()];
         for inst in instances.into_iter() {

@@ -248,7 +248,7 @@ impl<'a> Renderer<'a> {
     pub fn render<'r, 'i>(
         &'r mut self,
         (width, height): (u32, u32),
-        instances: impl Iterator<Item = Ref<'i, dyn visual::Instance>> + 'i,
+        instances: impl Iterator<Item = &'i dyn visual::Instance> + 'i,
     ) where
         'r: 'i,
     {

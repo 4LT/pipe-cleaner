@@ -20,8 +20,8 @@ fn main() -> Result<(), String> {
         indices: cube_indices,
     };
 
-
     let mut vis_mgr_builder = visual::ManagerBuilder::new();
+    let world = World::new(&mut vis_mgr_builder, 20);
     let cube_model = vis_mgr_builder.register_class(cube_mesh);
     let mut ent_mgr = entity::Manager::default();
     let player = ent_mgr.create();
@@ -75,7 +75,7 @@ fn main() -> Result<(), String> {
             };
         }
 
-        rend.render((w, h), ent_mgr.iter());
+        rend.render((w, h), world.geometry().chain(ent_mgr.iter()));
         sleep(frame_duration);
     }
 

@@ -2,6 +2,7 @@ use std::cell::{Ref, RefCell, RefMut};
 use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
 use std::rc::{Rc, Weak};
+use crate::visual;
 
 #[derive(Clone, Copy)]
 pub struct PipePosition {
@@ -36,23 +37,14 @@ impl Entity {
     }
 }
 
-impl crate::visual::Instance for Entity {
+impl visual::Instance for Entity {
     fn transform(&self) -> [f32; 12] {
         let (sin, cos) = self.pos.angle.sin_cos();
 
         [
-            1f32,
-            0f32,
-            0f32,
-            cos,
-            0f32,
-            1f32,
-            0f32,
-            sin,
-            0f32,
-            0f32,
-            1f32,
-            self.pos.depth,
+            1f32, 0f32, 0f32, cos,
+            0f32, 1f32, 0f32, sin,
+            0f32, 0f32, 1f32, self.pos.depth,
         ]
     }
 
@@ -82,7 +74,7 @@ impl PartialEq for HashEnt {
 
 impl HashEnt {
     fn borrow(&self) -> Ref<Entity> {
-        self.0.borrow()
+        (*self.0).borrow()
     }
 
     fn borrow_mut(&self) -> RefMut<Entity> {
@@ -110,12 +102,14 @@ impl Default for Manager {
     }
 }
 
+use std::borrow::Borrow;
+
 impl Manager {
     pub fn iter<'a>(
         &'a self,
-    ) -> impl Iterator<Item = Ref<'a, dyn crate::visual::Instance>> {
-        self.entities.iter().map(move |ent| {
-            ent.borrow() as Ref<'a, dyn crate::visual::Instance>
+    ) -> impl Iterator<Item = &'a (dyn visual::Instance + 'a)> {
+        self.entities.iter().map(|HashEnt(ent)| {
+            ent as &'a (dyn visual::Instance + 'a)
         })
     }
 
