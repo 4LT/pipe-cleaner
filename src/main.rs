@@ -4,6 +4,7 @@ mod world;
 
 use entity::PipePosition;
 use sdl2::event::{Event, WindowEvent};
+use sdl2::keyboard::Keycode;
 use std::thread::sleep;
 use std::time::Duration;
 use visual::geo;
@@ -29,8 +30,8 @@ fn main() -> Result<(), String> {
     {
         let mut player = player.borrow_mut();
         player.pos = PipePosition {
-            angle: 0f32,
-            depth: 1f32,
+            angle: 3f32 * std::f32::consts::TAU / 4f32,
+            depth: 1.5f32,
         };
         player.color = [0f32, 1f32, 1f32];
         player.model = cube_model;
@@ -56,6 +57,8 @@ fn main() -> Result<(), String> {
 
     let mut w = 800u32;
     let mut h = 600u32;
+    let mut left = 0f32;
+    let mut right = 0f32;
 
     'running: loop {
         for event in event_pump.poll_iter() {
@@ -71,8 +74,35 @@ fn main() -> Result<(), String> {
                     w = width as u32;
                     h = height as u32;
                 }
+                Event::KeyDown {
+                    keycode: Some(k),
+                    ..
+                } => {
+                    if k == Keycode::A {
+                        left = 1.0;
+                    } else if k == Keycode::D {
+                        right = 1.0;
+                    }
+                }
+                Event::KeyUp {
+                    keycode: Some(k),
+                    ..
+                } => {
+                    if k == Keycode::A {
+                        left = 0.0;
+                    } else if k == Keycode::D {
+                        right = 0.0;
+                    }
+                }
                 _ => {}
             };
+        }
+
+        let player_velocity = (right - left) * 0.03;
+
+        {
+            let mut player = player.borrow_mut();
+            player.pos.angle+= player_velocity;
         }
 
         rend.render((w, h), world.geometry().chain(ent_mgr.iter()));
