@@ -186,7 +186,7 @@ impl<'a> Renderer<'a> {
                 },
                 fragment: Some(wgpu::FragmentState {
                     targets: &[Some(wgpu::ColorTargetState {
-                        format: wgpu::TextureFormat::Bgra8UnormSrgb,
+                        format: wgpu::TextureFormat::Bgra8Unorm,
                         blend: None,
                         write_mask: wgpu::ColorWrites::ALL,
                     })],
@@ -222,7 +222,7 @@ impl<'a> Renderer<'a> {
 
         let surf_config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            format: wgpu::TextureFormat::Bgra8UnormSrgb,
+            format: wgpu::TextureFormat::Bgra8Unorm,
             width,
             height,
             present_mode: wgpu::PresentMode::AutoNoVsync,
@@ -282,6 +282,7 @@ impl<'a> Renderer<'a> {
             .create_texture(&depth_tex_desc)
             .create_view(&wgpu::TextureViewDescriptor::default());
 
+        self.cam.w_h_ratio = width as f32 / height as f32;
         let cam_bytes = self.cam.into_bytes();
 
         self.queue.write_buffer(&self.uniforms, 0u64, &cam_bytes);
