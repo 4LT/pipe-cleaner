@@ -1,8 +1,8 @@
+use std::borrow::Borrow;
+use std::cell::RefCell;
 use std::mem::size_of;
 use std::ops::Range;
-use std::borrow::Borrow;
 use std::rc::Rc;
-use std::cell::RefCell;
 
 pub mod geo;
 mod renderer;
@@ -78,44 +78,8 @@ impl<T: Instance> Instance for Rc<RefCell<T>> {
     }
 }
 
-/*
-impl<'a, T: AsRef<U>, U: Instance> Instance for T {
-    fn transform(&self) -> TransformMatrix {
-        self.as_ref().transform()
-    }
-
-    fn color(&self) -> Color {
-        self.as_ref().color()
-    }
-
-    fn model(&self) -> usize {
-        self.as_ref().model()
-    }
-
-    fn attributes(&self) -> Attributes {
-        self.as_ref().attributes()
-    }
-}
-*/
-
 #[derive(Clone, Copy)]
 pub struct WorldPosition(pub [f32; 3]);
-
-/*
-impl Attributes for Instance<WorldPosition> {
-    fn transform(&self) -> [f32; 12] {
-        let WorldPosition([x, y, z]) = self.position;
-
-        [
-            1f32, 0f32, 0f32, x, 0f32, 1f32, 0f32, y, 0f32, 0f32, 1f32, z,
-        ]
-    }
-
-    fn color(&self) -> [f32; 3] {
-        self.color
-    }
-}
-*/
 
 pub struct Model {
     index_range: Range<u32>,

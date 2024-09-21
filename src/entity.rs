@@ -1,8 +1,8 @@
+use crate::visual;
 use std::cell::{Ref, RefCell, RefMut};
 use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
 use std::rc::{Rc, Weak};
-use crate::visual;
 
 #[derive(Clone, Copy)]
 pub struct PipePosition {
@@ -38,12 +38,13 @@ impl Entity {
 }
 
 impl visual::Instance for Entity {
+    #[rustfmt::skip]
     fn transform(&self) -> [f32; 12] {
         let (sin, cos) = self.pos.angle.sin_cos();
 
         [
-            1f32, 0f32, 0f32, cos,
-            0f32, 1f32, 0f32, sin,
+            sin,  cos,  0f32, cos,
+            -cos, sin,  0f32, sin,
             0f32, 0f32, 1f32, self.pos.depth,
         ]
     }
@@ -108,9 +109,9 @@ impl Manager {
     pub fn iter<'a>(
         &'a self,
     ) -> impl Iterator<Item = &'a (dyn visual::Instance + 'a)> {
-        self.entities.iter().map(|HashEnt(ent)| {
-            ent as &'a (dyn visual::Instance + 'a)
-        })
+        self.entities
+            .iter()
+            .map(|HashEnt(ent)| ent as &'a (dyn visual::Instance + 'a))
     }
 
     pub fn create(&mut self) -> EntRef {

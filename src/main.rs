@@ -30,8 +30,8 @@ fn main() -> Result<(), String> {
     {
         let mut player = player.borrow_mut();
         player.pos = PipePosition {
-            angle: 3f32 * std::f32::consts::TAU / 4f32,
-            depth: 1.5f32,
+            angle: 3.0 * std::f32::consts::TAU / 4.0,
+            depth: 1.5,
         };
         player.color = [0f32, 1f32, 1f32];
         player.model = cube_model;
@@ -49,8 +49,8 @@ fn main() -> Result<(), String> {
 
     let main_window_id = window.id();
 
-    let mut rend = visual::Renderer::new(&window, 90f32, vis_mgr_builder)
-        .map_err(|e| e)?;
+    let mut rend =
+        visual::Renderer::new(&window, 90.0, vis_mgr_builder).map_err(|e| e)?;
 
     let mut event_pump = sdl_context.event_pump()?;
     let frame_duration = Duration::from_secs_f64(FRAME_DURATION);
@@ -75,8 +75,7 @@ fn main() -> Result<(), String> {
                     h = height as u32;
                 }
                 Event::KeyDown {
-                    keycode: Some(k),
-                    ..
+                    keycode: Some(k), ..
                 } => {
                     if k == Keycode::A {
                         left = 1.0;
@@ -85,8 +84,7 @@ fn main() -> Result<(), String> {
                     }
                 }
                 Event::KeyUp {
-                    keycode: Some(k),
-                    ..
+                    keycode: Some(k), ..
                 } => {
                     if k == Keycode::A {
                         left = 0.0;
@@ -102,7 +100,7 @@ fn main() -> Result<(), String> {
 
         {
             let mut player = player.borrow_mut();
-            player.pos.angle+= player_velocity;
+            player.pos.angle += player_velocity;
         }
 
         rend.render((w, h), world.geometry().chain(ent_mgr.iter()));
