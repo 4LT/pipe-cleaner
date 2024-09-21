@@ -31,7 +31,7 @@ fn main() -> Result<(), String> {
         let mut player = player.borrow_mut();
         player.pos = PipePosition {
             angle: 3.0 * std::f32::consts::TAU / 4.0,
-            depth: 1.5,
+            depth: 2.0,
         };
         player.color = [0f32, 1f32, 1f32];
         player.model = cube_model;

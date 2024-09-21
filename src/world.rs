@@ -3,6 +3,8 @@ use std::cell::{Ref, RefCell};
 use visual::geo;
 use visual::WorldPosition;
 
+const RING_RADIUS: f32 = 1.15;
+
 pub struct World {
     ring_model: usize,
     rings: Vec<RingInstance>,
@@ -10,7 +12,7 @@ pub struct World {
 
 impl World {
     pub fn new(builder: &mut visual::ManagerBuilder, ring_ct: u32) -> Self {
-        let vertices = geo::circle_pts(20);
+        let vertices = geo::circle_pts(20, RING_RADIUS);
         let indices = geo::loop_indices(20);
 
         let ring_mesh = visual::Mesh { vertices, indices };

@@ -23,8 +23,8 @@ struct FragOut {
 @group(0) @binding(0)
 var<uniform> cam: CameraUniforms;
 
-const FOG = vec4<f32>(0.0, 0.0, 0.0, 0.9997);
-const POST_MULTIPLY = 1.7;
+const FOG = vec4<f32>(0.0, 0.0, 0.0, 0.99);
+const POST_MULTIPLY = 1.2;
 
 @vertex
 fn vs_main(@location(0) pos: vec3<f32>, inst: Instance) -> VertexToPixel {

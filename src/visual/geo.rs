@@ -1,10 +1,10 @@
-pub fn circle_pts(vert_count: i32) -> Box<[[f32; 3]]> {
+pub fn circle_pts(vert_count: i32, radius: f32) -> Box<[[f32; 3]]> {
     (0..vert_count)
         .map(|i| {
             let angle =
                 (i as f32) / (vert_count as f32) * std::f32::consts::TAU;
             let (sin, cos) = angle.sin_cos();
-            [cos, sin, 0f32]
+            [radius * cos, radius * sin, 0f32]
         })
         .collect()
 }
