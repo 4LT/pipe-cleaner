@@ -19,9 +19,13 @@ pub type WeakEntRef = Weak<RefCell<Entity>>;
 pub struct Entity {
     id: u64,
     pub parent: WeakEntRef,
-    pub pos: PipePosition,
+    pub position: PipePosition,
     pub color: [f32; 3],
     pub model: usize,
+    pub velocity: [f32; 2],
+    pub target_velocity: [f32; 2],
+    pub max_acceleration: f32,
+    pub max_speed: f32,
 }
 
 impl Entity {
@@ -29,12 +33,16 @@ impl Entity {
         Entity {
             id,
             parent: Weak::default(),
-            pos: PipePosition {
+            position: PipePosition {
                 angle: 0f32,
                 depth: 0f32,
             },
             color: [1f32; 3],
             model: 0,
+            velocity: [0f32; 2],
+            target_velocity: [0f32; 2],
+            max_acceleration: 0.05,
+            max_speed: 1f32,
         }
     }
 }
@@ -42,12 +50,12 @@ impl Entity {
 impl visual::Instance for Entity {
     #[rustfmt::skip]
     fn transform(&self) -> [f32; 12] {
-        let (sin, cos) = self.pos.angle.sin_cos();
+        let (sin, cos) = self.position.angle.sin_cos();
 
         [
             cos,  sin,  0f32, RADIUS*cos,
             sin, -cos,  0f32, RADIUS*sin,
-            0f32, 0f32, 1f32, self.pos.depth,
+            0f32, 0f32, 1f32, self.position.depth,
         ]
     }
 
@@ -93,7 +101,7 @@ impl Eq for HashEnt {}
 
 pub struct Manager {
     next_id: u64,
-    entities: HashSet<HashEnt>,
+    pub entities: HashSet<HashEnt>,
 }
 
 impl Default for Manager {
@@ -108,7 +116,11 @@ impl Default for Manager {
 use std::borrow::Borrow;
 
 impl Manager {
-    pub fn iter<'a>(
+    pub fn iter(&self) -> impl Iterator<Item = EntRef> + '_ {
+        self.entities.iter().map(|HashEnt(ent)| ent.clone())
+    }
+
+    pub fn iter_visual<'a>(
         &'a self,
     ) -> impl Iterator<Item = &'a (dyn visual::Instance + 'a)> {
         self.entities

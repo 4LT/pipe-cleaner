@@ -2,13 +2,15 @@ use crate::{visual, entity, PipePosition};
 use std::cell::{Ref, RefCell};
 use visual::geo;
 use visual::WorldPosition;
+use crate::FRAME_DURATION;
 
+const FRAME_DURATION_F32: f32 = FRAME_DURATION as f32;
 const RING_RADIUS: f32 = 0.57;
 
 pub struct World {
     ring_model: usize,
     rings: Vec<RingInstance>,
-    entities: entity::Manager,
+    ent_mgr: entity::Manager,
 }
 
 impl World {
@@ -29,7 +31,7 @@ impl World {
         Self {
             ring_model,
             rings,
-            entities: Default::default(),
+            ent_mgr: Default::default(),
         }
     }
 
@@ -39,13 +41,44 @@ impl World {
         self.rings
             .iter()
             .map(|r| r as &'a (dyn visual::Instance + 'a))
-            .chain(self.entities.iter())
+            .chain(self.ent_mgr.iter_visual())
     }
 
-    pub fn place_entity(&mut self, pos: PipePosition) -> entity::EntRef {
-        let ent = self.entities.create();
-        ent.borrow_mut().pos = pos;
+    pub fn place_entity(&mut self, position: PipePosition) -> entity::EntRef {
+        let mut ent = self.ent_mgr.create();
+        ent.borrow_mut().position = position;
         ent
+    }
+
+    pub fn update_physics(&self) {
+        for ent in self.ent_mgr.iter() {
+            let mut ent = ent.borrow_mut();
+            
+            let [mut vel_angular, vel_depth] = ent.velocity;
+            let [targ_vel_angular, _] = ent.target_velocity;
+
+            let accel = if targ_vel_angular > vel_angular {
+                ent.max_acceleration
+            } else if targ_vel_angular < vel_angular {
+                -ent.max_acceleration
+            } else {
+                0.0
+            };
+
+            ent.position.angle+= 
+                0.5 * FRAME_DURATION_F32 * FRAME_DURATION_F32 * accel
+                + FRAME_DURATION_F32 * vel_angular;
+
+            if targ_vel_angular > vel_angular {
+                vel_angular+= FRAME_DURATION_F32 * ent.max_acceleration;
+                vel_angular = vel_angular.min(targ_vel_angular);
+            } else if targ_vel_angular < vel_angular {
+                vel_angular-= FRAME_DURATION_F32 * ent.max_acceleration;
+                vel_angular = vel_angular.max(targ_vel_angular);
+            }
+
+            ent.velocity = [vel_angular, vel_depth];
+        }
     }
 }
 

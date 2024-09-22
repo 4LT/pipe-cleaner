@@ -10,7 +10,7 @@ use std::time::Duration;
 use visual::geo;
 use world::World;
 
-static FRAME_DURATION: f64 = 1f64 / 120f64;
+pub const FRAME_DURATION: f64 = 1f64 / 120f64;
 
 fn main() -> Result<(), String> {
     let cube_vertices = geo::cube_pts();
@@ -36,6 +36,8 @@ fn main() -> Result<(), String> {
         let mut player = player.borrow_mut();
         player.color = [0f32, 1f32, 1f32];
         player.model = cube_model;
+        player.max_acceleration = 80.0;
+        player.max_speed = 8.0;
     }
 
     let sdl_context = sdl2::init()?;
@@ -97,13 +99,12 @@ fn main() -> Result<(), String> {
             };
         }
 
-        let player_velocity = (right - left) * 0.03;
-
         {
             let mut player = player.borrow_mut();
-            player.pos.angle += player_velocity;
+            player.target_velocity[0] = (right - left) * player.max_speed;
         }
 
+        world.update_physics();
         rend.render((w, h), world.geometry());
         sleep(frame_duration);
     }
