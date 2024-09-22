@@ -1,4 +1,4 @@
-use crate::visual;
+use crate::{visual, entity, PipePosition};
 use std::cell::{Ref, RefCell};
 use visual::geo;
 use visual::WorldPosition;
@@ -8,6 +8,7 @@ const RING_RADIUS: f32 = 1.15;
 pub struct World {
     ring_model: usize,
     rings: Vec<RingInstance>,
+    entities: entity::Manager,
 }
 
 impl World {
@@ -25,7 +26,11 @@ impl World {
             })
             .collect();
 
-        Self { ring_model, rings }
+        Self {
+            ring_model,
+            rings,
+            entities: Default::default(),
+        }
     }
 
     pub fn geometry<'a>(
@@ -34,6 +39,13 @@ impl World {
         self.rings
             .iter()
             .map(|r| r as &'a (dyn visual::Instance + 'a))
+            .chain(self.entities.iter())
+    }
+
+    pub fn place_entity(&mut self, pos: PipePosition) -> entity::EntRef {
+        let ent = self.entities.create();
+        ent.borrow_mut().pos = pos;
+        ent
     }
 }
 

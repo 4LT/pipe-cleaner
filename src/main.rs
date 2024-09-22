@@ -22,17 +22,18 @@ fn main() -> Result<(), String> {
     };
 
     let mut vis_mgr_builder = visual::ManagerBuilder::new();
-    let world = World::new(&mut vis_mgr_builder, 20);
+    let mut world = World::new(&mut vis_mgr_builder, 20);
     let cube_model = vis_mgr_builder.register_class(cube_mesh);
-    let mut ent_mgr = entity::Manager::default();
-    let player = ent_mgr.create();
+
+    let player_pos = PipePosition {
+        angle: 3.0 * std::f32::consts::TAU / 4.0,
+        depth: 2.0,
+    };
+
+    let player = world.place_entity(player_pos);
 
     {
         let mut player = player.borrow_mut();
-        player.pos = PipePosition {
-            angle: 3.0 * std::f32::consts::TAU / 4.0,
-            depth: 2.0,
-        };
         player.color = [0f32, 1f32, 1f32];
         player.model = cube_model;
     }
@@ -103,7 +104,7 @@ fn main() -> Result<(), String> {
             player.pos.angle += player_velocity;
         }
 
-        rend.render((w, h), world.geometry().chain(ent_mgr.iter()));
+        rend.render((w, h), world.geometry());
         sleep(frame_duration);
     }
 
