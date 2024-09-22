@@ -27,7 +27,7 @@ fn main() -> Result<(), String> {
 
     let player_pos = PipePosition {
         angle: 3.0 * std::f32::consts::TAU / 4.0,
-        depth: 2.0,
+        depth: 1.0,
     };
 
     let player = world.place_entity(player_pos);

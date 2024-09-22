@@ -3,7 +3,7 @@ use std::cell::{Ref, RefCell};
 use visual::geo;
 use visual::WorldPosition;
 
-const RING_RADIUS: f32 = 1.15;
+const RING_RADIUS: f32 = 0.57;
 
 pub struct World {
     ring_model: usize,

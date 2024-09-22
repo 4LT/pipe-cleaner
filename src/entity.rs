@@ -4,6 +4,8 @@ use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
 use std::rc::{Rc, Weak};
 
+const RADIUS: f32 = 0.5;
+
 #[derive(Clone, Copy)]
 pub struct PipePosition {
     pub angle: f32,
@@ -43,8 +45,8 @@ impl visual::Instance for Entity {
         let (sin, cos) = self.pos.angle.sin_cos();
 
         [
-            sin,  cos,  0f32, cos,
-            -cos, sin,  0f32, sin,
+            cos,  sin,  0f32, RADIUS*cos,
+            sin, -cos,  0f32, RADIUS*sin,
             0f32, 0f32, 1f32, self.pos.depth,
         ]
     }
