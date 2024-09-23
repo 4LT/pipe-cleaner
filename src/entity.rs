@@ -1,4 +1,4 @@
-use crate::visual;
+use crate::{visual, World};
 use std::cell::{Ref, RefCell, RefMut};
 use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
@@ -12,8 +12,11 @@ pub struct PipePosition {
     pub depth: f32,
 }
 
+pub type Think = dyn Fn(&mut World, EntRef);
 pub type EntRef = Rc<RefCell<Entity>>;
 pub type WeakEntRef = Weak<RefCell<Entity>>;
+
+pub fn default_think(_: &mut World, _: EntRef) {}
 
 #[derive(Clone)]
 pub struct Entity {
@@ -26,6 +29,9 @@ pub struct Entity {
     pub target_velocity: [f32; 2],
     pub max_acceleration: f32,
     pub max_speed: f32,
+    pub countdown: f64,
+    pub think: &'static Think,
+    pub fire: bool,
 }
 
 impl Entity {
@@ -43,6 +49,9 @@ impl Entity {
             target_velocity: [0f32; 2],
             max_acceleration: 0.05,
             max_speed: 1f32,
+            countdown: 0f64,
+            think: &default_think,
+            fire: false,
         }
     }
 }
@@ -112,8 +121,6 @@ impl Default for Manager {
         }
     }
 }
-
-use std::borrow::Borrow;
 
 impl Manager {
     pub fn iter(&self) -> impl Iterator<Item = EntRef> + '_ {

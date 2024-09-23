@@ -1,10 +1,11 @@
 use crate::{visual, entity, PipePosition};
+use entity::EntRef;
 use std::cell::{Ref, RefCell};
 use visual::geo;
 use visual::WorldPosition;
-use crate::FRAME_DURATION;
+use crate::FRAME_DURATION_F32;
+use std::rc::Rc;
 
-const FRAME_DURATION_F32: f32 = FRAME_DURATION as f32;
 const RING_RADIUS: f32 = 0.57;
 
 pub struct World {
@@ -50,6 +51,20 @@ impl World {
         ent
     }
 
+    pub fn remove_entity(&mut self, entity: EntRef) {
+        self.ent_mgr.remove(&entity);
+    }
+
+    pub fn update_logic(&mut self) {
+        let ents = self.ent_mgr.iter().collect::<Vec<_>>();
+
+        for ent in ents {
+            let cloned = Rc::clone(&ent);
+            let think = ent.borrow().think;
+            think(self, cloned);
+        }
+    }
+
     pub fn update_physics(&self) {
         for ent in self.ent_mgr.iter() {
             let mut ent = ent.borrow_mut();
@@ -69,6 +84,8 @@ impl World {
                 0.5 * FRAME_DURATION_F32 * FRAME_DURATION_F32 * accel
                 + FRAME_DURATION_F32 * vel_angular;
 
+            ent.position.depth+= FRAME_DURATION_F32 * vel_depth;
+
             if targ_vel_angular > vel_angular {
                 vel_angular+= FRAME_DURATION_F32 * ent.max_acceleration;
                 vel_angular = vel_angular.min(targ_vel_angular);
@@ -86,11 +103,14 @@ impl World {
 struct RingInstance(WorldPosition, usize);
 
 impl visual::Instance for RingInstance {
+    #[rustfmt::skip]
     fn transform(&self) -> visual::TransformMatrix {
         let RingInstance(WorldPosition([x, y, z]), _) = self;
 
         [
-            1f32, 0f32, 0f32, *x, 0f32, 1f32, 0f32, *y, 0f32, 0f32, 1f32, *z,
+            1f32, 0f32, 0f32, *x,
+            0f32, 1f32, 0f32, *y,
+            0f32, 0f32, 1f32, *z,
         ]
     }
 

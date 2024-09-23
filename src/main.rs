@@ -2,15 +2,45 @@ mod entity;
 mod visual;
 mod world;
 
-use entity::PipePosition;
+use entity::{PipePosition, EntRef};
 use sdl2::event::{Event, WindowEvent};
 use sdl2::keyboard::Keycode;
 use std::thread::sleep;
 use std::time::Duration;
+use std::rc::Rc;
 use visual::geo;
 use world::World;
 
 pub const FRAME_DURATION: f64 = 1f64 / 120f64;
+pub const FRAME_DURATION_F32: f32 = FRAME_DURATION as f32;
+
+fn bullet_think(world: &mut World, bullet: EntRef) {
+    let mut countdown = bullet.borrow().countdown;
+    let bullet = Rc::clone(&bullet);
+    
+    if countdown > 0.0 {
+        bullet.borrow_mut().countdown-= FRAME_DURATION;
+    } else {
+        world.remove_entity(bullet);
+    }
+}
+
+fn player_think(world: &mut World, player: EntRef) {
+    if player.borrow().countdown > 0.0 {
+        player.borrow_mut().countdown-= FRAME_DURATION;
+    } else if player.borrow().fire {
+        let bullet = world.place_entity(player.borrow().position);
+        let mut bullet = bullet.borrow_mut();
+        bullet.color = [1.0, 1.0, 0.0];
+        bullet.model = player.borrow().model;
+        bullet.countdown = 3.0;
+        let speed = 20.0;
+        bullet.max_speed = speed;
+        bullet.velocity = [0.0, speed];
+        bullet.think = &bullet_think;
+        player.borrow_mut().countdown = 0.02;
+    }
+}
 
 fn main() -> Result<(), String> {
     let cube_vertices = geo::cube_pts();
@@ -27,7 +57,7 @@ fn main() -> Result<(), String> {
 
     let player_pos = PipePosition {
         angle: 3.0 * std::f32::consts::TAU / 4.0,
-        depth: 1.0,
+        depth: 0.67,
     };
 
     let player = world.place_entity(player_pos);
@@ -38,6 +68,7 @@ fn main() -> Result<(), String> {
         player.model = cube_model;
         player.max_acceleration = 80.0;
         player.max_speed = 8.0;
+        player.think = &player_think;
     }
 
     let sdl_context = sdl2::init()?;
@@ -62,6 +93,7 @@ fn main() -> Result<(), String> {
     let mut h = 600u32;
     let mut left = 0f32;
     let mut right = 0f32;
+    let mut fire = false;
 
     'running: loop {
         for event in event_pump.poll_iter() {
@@ -84,6 +116,8 @@ fn main() -> Result<(), String> {
                         left = 1.0;
                     } else if k == Keycode::D {
                         right = 1.0;
+                    } else if k == Keycode::SPACE {
+                        fire = true;
                     }
                 }
                 Event::KeyUp {
@@ -93,6 +127,8 @@ fn main() -> Result<(), String> {
                         left = 0.0;
                     } else if k == Keycode::D {
                         right = 0.0;
+                    } else if k == Keycode::SPACE {
+                        fire = false;
                     }
                 }
                 _ => {}
@@ -102,8 +138,10 @@ fn main() -> Result<(), String> {
         {
             let mut player = player.borrow_mut();
             player.target_velocity[0] = (right - left) * player.max_speed;
+            player.fire = fire;
         }
 
+        world.update_logic();
         world.update_physics();
         rend.render((w, h), world.geometry());
         sleep(frame_duration);
