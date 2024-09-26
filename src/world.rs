@@ -60,7 +60,7 @@ impl World {
 
         for ent in ents {
             let cloned = Rc::clone(&ent);
-            let think = ent.borrow().think;
+            let think = Rc::clone(&ent.borrow().think);
             think(self, cloned);
         }
     }

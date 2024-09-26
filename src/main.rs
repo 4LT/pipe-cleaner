@@ -14,34 +14,6 @@ use world::World;
 pub const FRAME_DURATION: f64 = 1f64 / 120f64;
 pub const FRAME_DURATION_F32: f32 = FRAME_DURATION as f32;
 
-fn bullet_think(world: &mut World, bullet: EntRef) {
-    let mut countdown = bullet.borrow().countdown;
-    let bullet = Rc::clone(&bullet);
-    
-    if countdown > 0.0 {
-        bullet.borrow_mut().countdown-= FRAME_DURATION;
-    } else {
-        world.remove_entity(bullet);
-    }
-}
-
-fn player_think(world: &mut World, player: EntRef) {
-    if player.borrow().countdown > 0.0 {
-        player.borrow_mut().countdown-= FRAME_DURATION;
-    } else if player.borrow().fire {
-        let bullet = world.place_entity(player.borrow().position);
-        let mut bullet = bullet.borrow_mut();
-        bullet.color = [1.0, 1.0, 0.0];
-        bullet.model = player.borrow().model;
-        bullet.countdown = 3.0;
-        let speed = 20.0;
-        bullet.max_speed = speed;
-        bullet.velocity = [0.0, speed];
-        bullet.think = &bullet_think;
-        player.borrow_mut().countdown = 0.02;
-    }
-}
-
 fn main() -> Result<(), String> {
     let cube_vertices = geo::cube_pts();
     let cube_indices = geo::cube_indices();
@@ -54,6 +26,33 @@ fn main() -> Result<(), String> {
     let mut vis_mgr_builder = visual::ManagerBuilder::new();
     let mut world = World::new(&mut vis_mgr_builder, 20);
     let cube_model = vis_mgr_builder.register_class(cube_mesh);
+
+    let bullet_think = move |world: &mut World, bullet: EntRef| {
+        let mut countdown = bullet.borrow().countdown;
+        
+        if countdown > 0.0 {
+            bullet.borrow_mut().countdown-= FRAME_DURATION;
+        } else {
+            world.remove_entity(bullet);
+        }
+    };
+
+    let player_think = move |world: &mut World, player: EntRef| {
+        if player.borrow().countdown > 0.0 {
+            player.borrow_mut().countdown-= FRAME_DURATION;
+        } else if player.borrow().fire {
+            let bullet = world.place_entity(player.borrow().position);
+            let mut bullet = bullet.borrow_mut();
+            bullet.color = [1.0, 1.0, 0.0];
+            bullet.model = cube_model;
+            bullet.countdown = 3.0;
+            let speed = 20.0;
+            bullet.max_speed = speed;
+            bullet.velocity = [0.0, speed];
+            bullet.think = Rc::new(bullet_think);
+            player.borrow_mut().countdown = 0.02;
+        }
+    };
 
     let player_pos = PipePosition {
         angle: 3.0 * std::f32::consts::TAU / 4.0,
@@ -68,7 +67,7 @@ fn main() -> Result<(), String> {
         player.model = cube_model;
         player.max_acceleration = 80.0;
         player.max_speed = 8.0;
-        player.think = &player_think;
+        player.think = Rc::new(player_think);
     }
 
     let sdl_context = sdl2::init()?;

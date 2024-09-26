@@ -30,7 +30,7 @@ pub struct Entity {
     pub max_acceleration: f32,
     pub max_speed: f32,
     pub countdown: f64,
-    pub think: &'static Think,
+    pub think: Rc<Think>,
     pub fire: bool,
 }
 
@@ -50,7 +50,7 @@ impl Entity {
             max_acceleration: 0.05,
             max_speed: 1f32,
             countdown: 0f64,
-            think: &default_think,
+            think: Rc::new(default_think),
             fire: false,
         }
     }
