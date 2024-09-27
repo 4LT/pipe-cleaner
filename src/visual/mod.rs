@@ -141,10 +141,10 @@ impl ManagerBuilder {
         Self { meshes: Vec::new() }
     }
 
-    pub fn register_class(&mut self, mesh: Mesh) -> usize {
-        let class_idx = self.meshes.len();
+    pub fn register_model(&mut self, mesh: Mesh) -> usize {
+        let model_idx = self.meshes.len();
         self.meshes.push(mesh);
-        class_idx
+        model_idx
     }
 
     pub fn build(self, max_instances: u32, device: &wgpu::Device) -> Manager {
@@ -210,7 +210,7 @@ impl Manager {
             println!("Index Start: {}", index_start);
             println!("Vertex Start: {}", vertex_start);
 
-            let (class, index_byte_ct, vertex_byte_ct) = Model::new(
+            let (model, index_byte_ct, vertex_byte_ct) = Model::new(
                 mesh,
                 index_start,
                 &index_buffer,
@@ -221,10 +221,10 @@ impl Manager {
             println!("Allocated {} Index Bytes", index_byte_ct);
             println!("Allocated {} Vertex Bytes", vertex_byte_ct);
 
-            index_start = class.index_range.end;
-            vertex_start = class.vertex_range.end;
+            index_start = model.index_range.end;
+            vertex_start = model.vertex_range.end;
 
-            models.push(class);
+            models.push(model);
         }
 
         index_buffer.unmap();

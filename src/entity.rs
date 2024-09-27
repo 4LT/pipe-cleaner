@@ -32,6 +32,7 @@ pub struct Entity {
     pub countdown: f64,
     pub think: Rc<Think>,
     pub fire: bool,
+    pub firing_state: u32,
 }
 
 impl Entity {
@@ -52,6 +53,7 @@ impl Entity {
             countdown: 0f64,
             think: Rc::new(default_think),
             fire: false,
+            firing_state: 0,
         }
     }
 }

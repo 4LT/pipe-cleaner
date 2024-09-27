@@ -6,7 +6,7 @@ use std::rc::Rc;
 use visual::geo;
 use visual::WorldPosition;
 
-const RING_RADIUS: f32 = 1.15;
+const RING_RADIUS: f32 = 1.07;
 
 pub struct World {
     ring_model: usize,
@@ -21,7 +21,7 @@ impl World {
 
         let ring_mesh = visual::Mesh { vertices, indices };
 
-        let ring_model = builder.register_class(ring_mesh);
+        let ring_model = builder.register_model(ring_mesh);
 
         let rings = (0..ring_ct)
             .map(|i| {

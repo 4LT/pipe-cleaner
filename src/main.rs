@@ -17,15 +17,23 @@ pub const FRAME_DURATION_F32: f32 = FRAME_DURATION as f32;
 fn main() -> Result<(), String> {
     let cube_vertices = geo::cube_pts();
     let cube_indices = geo::cube_indices();
+    let bullet_vertices = geo::bullet_pts(0.1);
+    let bullet_indices = geo::path_indices(bullet_vertices.len() as u32);
 
     let cube_mesh = visual::Mesh {
         vertices: cube_vertices,
         indices: cube_indices,
     };
 
+    let bullet_mesh = visual::Mesh {
+        vertices: bullet_vertices,
+        indices: bullet_indices,
+    };
+
     let mut vis_mgr_builder = visual::ManagerBuilder::new();
     let mut world = World::new(&mut vis_mgr_builder, 20);
-    let cube_model = vis_mgr_builder.register_class(cube_mesh);
+    let cube_model = vis_mgr_builder.register_model(cube_mesh);
+    let bullet_model = vis_mgr_builder.register_model(bullet_mesh);
 
     let bullet_think = move |world: &mut World, bullet: EntRef| {
         let mut countdown = bullet.borrow().countdown;
@@ -41,22 +49,33 @@ fn main() -> Result<(), String> {
         if player.borrow().countdown > 0.0 {
             player.borrow_mut().countdown -= FRAME_DURATION;
         } else if player.borrow().fire {
-            let bullet = world.place_entity(player.borrow().position);
+            let mut muzzle = player.borrow().position;
+            muzzle.depth+= 0.05;
+            
+            if player.borrow().firing_state == 0 {
+                muzzle.angle+= 0.02;
+            } else {
+                muzzle.angle-= 0.02;
+            }
+
+            let bullet = world.place_entity(muzzle);
             let mut bullet = bullet.borrow_mut();
             bullet.color = [1.0, 1.0, 0.0];
-            bullet.model = cube_model;
+            bullet.model = bullet_model;
             bullet.countdown = 3.0;
-            let speed = 20.0;
+            let speed = 10.0;
             bullet.max_speed = speed;
             bullet.velocity = [0.0, speed];
             bullet.think = Rc::new(bullet_think);
-            player.borrow_mut().countdown = 0.02;
+            let firing_state = 1 - player.borrow().firing_state;
+            player.borrow_mut().firing_state = firing_state;
+            player.borrow_mut().countdown = 0.03;
         }
     };
 
     let player_pos = PipePosition {
         angle: 3.0 * std::f32::consts::TAU / 4.0,
-        depth: 1.33,
+        depth: 1.15,
     };
 
     let player = world.place_entity(player_pos);
