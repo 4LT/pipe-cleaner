@@ -2,12 +2,12 @@ mod entity;
 mod visual;
 mod world;
 
-use entity::{PipePosition, EntRef};
+use entity::{EntRef, PipePosition};
 use sdl2::event::{Event, WindowEvent};
 use sdl2::keyboard::Keycode;
+use std::rc::Rc;
 use std::thread::sleep;
 use std::time::Duration;
-use std::rc::Rc;
 use visual::geo;
 use world::World;
 
@@ -29,9 +29,9 @@ fn main() -> Result<(), String> {
 
     let bullet_think = move |world: &mut World, bullet: EntRef| {
         let mut countdown = bullet.borrow().countdown;
-        
+
         if countdown > 0.0 {
-            bullet.borrow_mut().countdown-= FRAME_DURATION;
+            bullet.borrow_mut().countdown -= FRAME_DURATION;
         } else {
             world.remove_entity(bullet);
         }
@@ -39,7 +39,7 @@ fn main() -> Result<(), String> {
 
     let player_think = move |world: &mut World, player: EntRef| {
         if player.borrow().countdown > 0.0 {
-            player.borrow_mut().countdown-= FRAME_DURATION;
+            player.borrow_mut().countdown -= FRAME_DURATION;
         } else if player.borrow().fire {
             let bullet = world.place_entity(player.borrow().position);
             let mut bullet = bullet.borrow_mut();
@@ -56,7 +56,7 @@ fn main() -> Result<(), String> {
 
     let player_pos = PipePosition {
         angle: 3.0 * std::f32::consts::TAU / 4.0,
-        depth: 0.67,
+        depth: 1.33,
     };
 
     let player = world.place_entity(player_pos);

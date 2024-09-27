@@ -1,12 +1,12 @@
-use crate::{visual, entity, PipePosition};
+use crate::FRAME_DURATION_F32;
+use crate::{entity, visual, PipePosition};
 use entity::EntRef;
 use std::cell::{Ref, RefCell};
+use std::rc::Rc;
 use visual::geo;
 use visual::WorldPosition;
-use crate::FRAME_DURATION_F32;
-use std::rc::Rc;
 
-const RING_RADIUS: f32 = 0.57;
+const RING_RADIUS: f32 = 1.15;
 
 pub struct World {
     ring_model: usize,
@@ -68,7 +68,7 @@ impl World {
     pub fn update_physics(&self) {
         for ent in self.ent_mgr.iter() {
             let mut ent = ent.borrow_mut();
-            
+
             let [mut vel_angular, vel_depth] = ent.velocity;
             let [targ_vel_angular, _] = ent.target_velocity;
 
@@ -80,17 +80,17 @@ impl World {
                 0.0
             };
 
-            ent.position.angle+= 
+            ent.position.angle +=
                 0.5 * FRAME_DURATION_F32 * FRAME_DURATION_F32 * accel
-                + FRAME_DURATION_F32 * vel_angular;
+                    + FRAME_DURATION_F32 * vel_angular;
 
-            ent.position.depth+= FRAME_DURATION_F32 * vel_depth;
+            ent.position.depth += FRAME_DURATION_F32 * vel_depth;
 
             if targ_vel_angular > vel_angular {
-                vel_angular+= FRAME_DURATION_F32 * ent.max_acceleration;
+                vel_angular += FRAME_DURATION_F32 * ent.max_acceleration;
                 vel_angular = vel_angular.min(targ_vel_angular);
             } else if targ_vel_angular < vel_angular {
-                vel_angular-= FRAME_DURATION_F32 * ent.max_acceleration;
+                vel_angular -= FRAME_DURATION_F32 * ent.max_acceleration;
                 vel_angular = vel_angular.max(targ_vel_angular);
             }
 
