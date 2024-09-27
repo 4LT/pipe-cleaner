@@ -18,7 +18,7 @@ fn main() -> Result<(), String> {
     let cube_vertices = geo::cube_pts();
     let cube_indices = geo::cube_indices();
     let bullet_vertices = geo::bullet_pts(0.1);
-    let bullet_indices = geo::path_indices(bullet_vertices.len() as u32);
+    let bullet_indices = geo::bullet_indices();
 
     let cube_mesh = visual::Mesh {
         vertices: cube_vertices,
@@ -50,12 +50,12 @@ fn main() -> Result<(), String> {
             player.borrow_mut().countdown -= FRAME_DURATION;
         } else if player.borrow().fire {
             let mut muzzle = player.borrow().position;
-            muzzle.depth+= 0.05;
-            
+            muzzle.depth += 0.05;
+
             if player.borrow().firing_state == 0 {
-                muzzle.angle+= 0.02;
+                muzzle.angle += 0.02;
             } else {
-                muzzle.angle-= 0.02;
+                muzzle.angle -= 0.02;
             }
 
             let bullet = world.place_entity(muzzle);
@@ -159,8 +159,7 @@ fn main() -> Result<(), String> {
             player.fire = fire;
         }
 
-        world.update_logic();
-        world.update_physics();
+        world.update();
         rend.render((w, h), world.geometry());
         sleep(frame_duration);
     }

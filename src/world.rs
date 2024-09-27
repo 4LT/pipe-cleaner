@@ -7,25 +7,30 @@ use visual::geo;
 use visual::WorldPosition;
 
 const RING_RADIUS: f32 = 1.07;
+const ZOOM_SPEED: f32 = 6.0;
 
 pub struct World {
     ring_model: usize,
     rings: Vec<RingInstance>,
     ent_mgr: entity::Manager,
+    progress: Rc<RefCell<f32>>,
 }
 
 impl World {
     pub fn new(builder: &mut visual::ManagerBuilder, ring_ct: u32) -> Self {
         let vertices = geo::circle_pts(20, RING_RADIUS);
         let indices = geo::loop_indices(20);
-
         let ring_mesh = visual::Mesh { vertices, indices };
-
         let ring_model = builder.register_model(ring_mesh);
+        let progress = Rc::new(RefCell::new(0.0));
 
         let rings = (0..ring_ct)
             .map(|i| {
-                RingInstance(WorldPosition([0f32, 0f32, i as f32]), ring_model)
+                RingInstance::new(
+                    visual::WorldPosition([0f32, 0f32, i as f32]),
+                    ring_model,
+                    Rc::clone(&progress),
+                )
             })
             .collect();
 
@@ -33,6 +38,7 @@ impl World {
             ring_model,
             rings,
             ent_mgr: Default::default(),
+            progress,
         }
     }
 
@@ -55,7 +61,13 @@ impl World {
         self.ent_mgr.remove(&entity);
     }
 
-    pub fn update_logic(&mut self) {
+    pub fn update(&mut self) {
+        self.update_logic();
+        self.update_physics();
+        *self.progress.borrow_mut()+= FRAME_DURATION_F32;
+    }
+
+    fn update_logic(&mut self) {
         let ents = self.ent_mgr.iter().collect::<Vec<_>>();
 
         for ent in ents {
@@ -65,7 +77,7 @@ impl World {
         }
     }
 
-    pub fn update_physics(&self) {
+    fn update_physics(&self) {
         for ent in self.ent_mgr.iter() {
             let mut ent = ent.borrow_mut();
 
@@ -99,18 +111,37 @@ impl World {
     }
 }
 
-#[derive(Clone, Copy)]
-struct RingInstance(WorldPosition, usize);
+#[derive(Clone)]
+struct RingInstance {
+    position: WorldPosition,
+    model: usize,
+    progress: Rc<RefCell<f32>>,
+}
+
+impl RingInstance {
+    pub fn new(
+        position: WorldPosition,
+        model: usize,
+        progress: Rc<RefCell<f32>>,
+    ) -> Self {
+        Self {
+            position,
+            model,
+            progress,
+        }
+    }
+}
 
 impl visual::Instance for RingInstance {
     #[rustfmt::skip]
     fn transform(&self) -> visual::TransformMatrix {
-        let RingInstance(WorldPosition([x, y, z]), _) = self;
+        let WorldPosition([x, y, z]) = self.position;
+        let offset = (*self.progress.borrow() * ZOOM_SPEED).rem_euclid(1.0);
 
         [
-            1f32, 0f32, 0f32, *x,
-            0f32, 1f32, 0f32, *y,
-            0f32, 0f32, 1f32, *z,
+            1f32, 0f32, 0f32, x,
+            0f32, 1f32, 0f32, y,
+            0f32, 0f32, 1f32, z - offset,
         ]
     }
 
@@ -119,7 +150,6 @@ impl visual::Instance for RingInstance {
     }
 
     fn model(&self) -> usize {
-        let RingInstance(_, model) = self;
-        *model
+        self.model
     }
 }
