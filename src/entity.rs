@@ -1,8 +1,8 @@
 use crate::{visual, World};
-use std::cell::{Ref, RefCell, RefMut};
+use std::cell::{Ref, RefCell};
 use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
-use std::rc::{Rc, Weak};
+use std::rc::Rc;
 
 const PIPE_RADIUS: f32 = 1.0;
 
@@ -14,14 +14,12 @@ pub struct PipePosition {
 
 pub type Think = dyn Fn(&mut World, EntRef);
 pub type EntRef = Rc<RefCell<Entity>>;
-pub type WeakEntRef = Weak<RefCell<Entity>>;
 
 pub fn default_think(_: &mut World, _: EntRef) {}
 
 #[derive(Clone)]
 pub struct Entity {
     id: u64,
-    pub parent: WeakEntRef,
     pub position: PipePosition,
     pub color: [f32; 3],
     pub model: usize,
@@ -39,7 +37,6 @@ impl Entity {
     fn new(id: u64) -> Entity {
         Entity {
             id,
-            parent: Weak::default(),
             position: PipePosition {
                 angle: 0f32,
                 depth: 0f32,
@@ -80,7 +77,7 @@ impl visual::Instance for Entity {
 }
 
 #[derive(Clone)]
-struct HashEnt(EntRef);
+pub struct HashEnt(EntRef);
 
 impl Hash for HashEnt {
     fn hash<H: Hasher>(&self, hasher: &mut H) {
@@ -97,14 +94,6 @@ impl PartialEq for HashEnt {
 impl HashEnt {
     fn borrow(&self) -> Ref<Entity> {
         (*self.0).borrow()
-    }
-
-    fn borrow_mut(&self) -> RefMut<Entity> {
-        self.0.borrow_mut()
-    }
-
-    fn unwrap(&self) -> EntRef {
-        Rc::clone(&self.0)
     }
 }
 

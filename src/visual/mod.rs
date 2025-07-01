@@ -18,12 +18,6 @@ pub struct Mesh {
     pub vertices: Box<[[f32; 3]]>,
 }
 
-#[derive(Clone, Copy)]
-pub struct BorrowedMesh<'a> {
-    pub indices: &'a [u32],
-    pub vertices: &'a [[f32; 3]],
-}
-
 pub type Attributes = [u8; 64];
 
 pub type TransformMatrix = [f32; 12];
@@ -156,7 +150,6 @@ pub struct Manager {
     index_buffer: wgpu::Buffer,
     vertex_buffer: wgpu::Buffer,
     inst_buffer: wgpu::Buffer,
-    max_instances: u32,
     models: Vec<Model>,
 }
 
@@ -234,7 +227,6 @@ impl Manager {
             index_buffer,
             vertex_buffer,
             inst_buffer,
-            max_instances,
             models,
         }
     }

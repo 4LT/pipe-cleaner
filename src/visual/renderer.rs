@@ -1,6 +1,5 @@
 use crate::visual;
 use std::borrow::Cow;
-use std::cell::Ref;
 
 pub struct Camera {
     pos: [f32; 3],
@@ -40,27 +39,37 @@ pub struct Renderer<'a> {
     device: wgpu::Device,
     surface_config: wgpu::SurfaceConfiguration,
     surface: wgpu::Surface<'a>,
+    depth_texture: wgpu::Texture,
     uniforms: wgpu::Buffer,
     pipeline: wgpu::RenderPipeline,
     bind_group: wgpu::BindGroup,
+    window_dimensions: (u32, u32),
 }
 
 impl<'a> Renderer<'a> {
     pub fn new(
-        window: &sdl2::video::Window,
+        window: &sdl3::video::Window,
         vfov: f32,
         mgr_builder: visual::ManagerBuilder,
     ) -> Result<Renderer<'a>, String> {
         let (width, height) = window.size();
 
-        let backends = wgpu::util::backend_bits_from_env()
+        let backends = wgpu::Backends::from_env()
             .unwrap_or_else(wgpu::Backends::all);
 
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+        let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
             backends,
             flags: wgpu::InstanceFlags::empty(),
-            dx12_shader_compiler: wgpu::Dx12Compiler::Fxc,
-            gles_minor_version: wgpu::Gles3MinorVersion::Automatic,
+            backend_options: wgpu::BackendOptions {
+                dx12: wgpu::Dx12BackendOptions {
+                    shader_compiler: wgpu::Dx12Compiler::Fxc,
+                },
+                gl: wgpu::GlBackendOptions {
+                    gles_minor_version: wgpu::Gles3MinorVersion::Automatic,
+                    fence_behavior: Default::default(),
+                },
+                noop: Default::default(),
+            },
         });
 
         let surface = unsafe {
@@ -77,8 +86,8 @@ impl<'a> Renderer<'a> {
             },
         ));
         let adapter = match adapter_opt {
-            Some(a) => a,
-            None => return Err(String::from("No adapter found")),
+            Ok(a) => a,
+            Err(_) => return Err(String::from("No adapter found")),
         };
 
         let (device, queue) = match pollster::block_on(adapter.request_device(
@@ -87,8 +96,8 @@ impl<'a> Renderer<'a> {
                 label: Some("device"),
                 required_features: wgpu::Features::empty(),
                 memory_hints: Default::default(),
+                trace: Default::default(),
             },
-            None,
         )) {
             Ok(a) => a,
             Err(e) => return Err(e.to_string()),
@@ -181,7 +190,7 @@ impl<'a> Renderer<'a> {
                 vertex: wgpu::VertexState {
                     buffers: &[vert_layout, inst_layout],
                     module: &shader,
-                    entry_point: "vs_main",
+                    entry_point: Some("vs_main"),
                     compilation_options: Default::default(),
                 },
                 fragment: Some(wgpu::FragmentState {
@@ -191,7 +200,7 @@ impl<'a> Renderer<'a> {
                         write_mask: wgpu::ColorWrites::ALL,
                     })],
                     module: &shader,
-                    entry_point: "fs_main",
+                    entry_point: Some("fs_main"),
                     compilation_options: Default::default(),
                 }),
                 primitive: wgpu::PrimitiveState {
@@ -232,34 +241,6 @@ impl<'a> Renderer<'a> {
         };
         surface.configure(&device, &surf_config);
 
-        Ok(Renderer {
-            cam,
-            res_mgr: mgr_builder.build(3000, &device),
-            queue,
-            device,
-            surface_config: surf_config,
-            surface,
-            uniforms: uniform_buffer,
-            pipeline: render_pipeline,
-            bind_group,
-        })
-    }
-
-    pub fn render<'r, 'i>(
-        &'r mut self,
-        (width, height): (u32, u32),
-        instances: impl Iterator<Item = &'i dyn visual::Instance> + 'i,
-    ) where
-        'r: 'i,
-    {
-        {
-            let cfg = &mut self.surface_config;
-            cfg.width = width;
-            cfg.height = height;
-        }
-
-        self.surface.configure(&self.device, &self.surface_config);
-
         let depth_extent = wgpu::Extent3d {
             width,
             height,
@@ -277,10 +258,62 @@ impl<'a> Renderer<'a> {
             view_formats: &[],
         };
 
-        let depth_texture_view = self
-            .device
-            .create_texture(&depth_tex_desc)
-            .create_view(&wgpu::TextureViewDescriptor::default());
+        let depth_texture = device.create_texture(&depth_tex_desc);
+
+        Ok(Renderer {
+            cam,
+            res_mgr: mgr_builder.build(3000, &device),
+            queue,
+            device,
+            surface_config: surf_config,
+            surface,
+            depth_texture,
+            uniforms: uniform_buffer,
+            pipeline: render_pipeline,
+            bind_group,
+            window_dimensions: (width, height),
+        })
+    }
+
+    pub fn render<'r, 'i>(
+        &'r mut self,
+        dimensions@(width, height): (u32, u32),
+        instances: impl Iterator<Item = &'i dyn visual::Instance> + 'i,
+    ) where
+        'r: 'i,
+    {
+        if dimensions != self.window_dimensions {
+            {
+                let cfg = &mut self.surface_config;
+                cfg.width = width;
+                cfg.height = height;
+            }
+
+            self.surface.configure(&self.device, &self.surface_config);
+
+            let depth_extent = wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            };
+
+            let depth_tex_desc = wgpu::TextureDescriptor {
+                label: Some("depth_texture"),
+                size: depth_extent,
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: wgpu::TextureFormat::Depth24Plus,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+                view_formats: &[],
+            };
+
+            self.depth_texture = self
+                .device
+                .create_texture(&depth_tex_desc);
+
+            self.window_dimensions = dimensions;
+        }
 
         self.cam.w_h_ratio = width as f32 / height as f32;
         let cam_bytes = self.cam.into_bytes();
@@ -298,6 +331,10 @@ impl<'a> Renderer<'a> {
         let out_color = frame
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
+
+        let depth_texture_view = self
+            .depth_texture
+            .create_view(&Default::default());
 
         let mut encoder = self.device.create_command_encoder(
             &wgpu::CommandEncoderDescriptor {

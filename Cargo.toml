@@ -1,15 +1,12 @@
 [package]
 name = "pipe-cleaner"
 version = "0.1.0"
-edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+edition = "2024"
 
 [dependencies]
-wgpu = "^22.1.0"
-pollster = "^0.3.0"
+wgpu = "^25.0.0"
+pollster = "^0.4.0"
 
-[dependencies.sdl2]
-#git = 'https://github.com/Rust-SDL2/rust-sdl2.git'
-version = "^0.37.0"
+[dependencies.sdl3]
+version = "^0.14.0"
 features = ["raw-window-handle"]

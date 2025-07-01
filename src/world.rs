@@ -1,7 +1,7 @@
 use crate::FRAME_DURATION_F32;
 use crate::{entity, visual, PipePosition};
 use entity::EntRef;
-use std::cell::{Ref, RefCell};
+use std::cell::RefCell;
 use std::rc::Rc;
 use visual::geo;
 use visual::WorldPosition;
@@ -10,7 +10,6 @@ const RING_RADIUS: f32 = 1.07;
 const ZOOM_SPEED: f32 = 6.0;
 
 pub struct World {
-    ring_model: usize,
     rings: Vec<RingInstance>,
     ent_mgr: entity::Manager,
     progress: Rc<RefCell<f32>>,
@@ -35,7 +34,6 @@ impl World {
             .collect();
 
         Self {
-            ring_model,
             rings,
             ent_mgr: Default::default(),
             progress,
@@ -52,7 +50,7 @@ impl World {
     }
 
     pub fn place_entity(&mut self, position: PipePosition) -> entity::EntRef {
-        let mut ent = self.ent_mgr.create();
+        let ent = self.ent_mgr.create();
         ent.borrow_mut().position = position;
         ent
     }

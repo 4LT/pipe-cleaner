@@ -3,8 +3,8 @@ mod visual;
 mod world;
 
 use entity::{EntRef, PipePosition};
-use sdl2::event::{Event, WindowEvent};
-use sdl2::keyboard::Keycode;
+use sdl3::event::{Event, WindowEvent};
+use sdl3::keyboard::Keycode;
 use std::rc::Rc;
 use std::thread::sleep;
 use std::time::Duration;
@@ -36,7 +36,7 @@ fn main() -> Result<(), String> {
     let bullet_model = vis_mgr_builder.register_model(bullet_mesh);
 
     let bullet_think = move |world: &mut World, bullet: EntRef| {
-        let mut countdown = bullet.borrow().countdown;
+        let countdown = bullet.borrow().countdown;
 
         if countdown > 0.0 {
             bullet.borrow_mut().countdown -= FRAME_DURATION;
@@ -89,8 +89,8 @@ fn main() -> Result<(), String> {
         player.think = Rc::new(player_think);
     }
 
-    let sdl_context = sdl2::init()?;
-    let video_subsystem = sdl_context.video()?;
+    let sdl_context = sdl3::init().map_err(|e| e.to_string())?;
+    let video_subsystem = sdl_context.video().map_err(|e| e.to_string())?;
 
     let window = video_subsystem
         .window("Pipecleaner", 800, 600)
@@ -104,7 +104,7 @@ fn main() -> Result<(), String> {
     let mut rend =
         visual::Renderer::new(&window, 90.0, vis_mgr_builder).map_err(|e| e)?;
 
-    let mut event_pump = sdl_context.event_pump()?;
+    let mut event_pump = sdl_context.event_pump().map_err(|e| e.to_string())?;
     let frame_duration = Duration::from_secs_f64(FRAME_DURATION);
 
     let mut w = 800u32;
@@ -134,7 +134,7 @@ fn main() -> Result<(), String> {
                         left = 1.0;
                     } else if k == Keycode::D {
                         right = 1.0;
-                    } else if k == Keycode::SPACE {
+                    } else if k == Keycode::Space {
                         fire = true;
                     }
                 }
@@ -145,7 +145,7 @@ fn main() -> Result<(), String> {
                         left = 0.0;
                     } else if k == Keycode::D {
                         right = 0.0;
-                    } else if k == Keycode::SPACE {
+                    } else if k == Keycode::Space {
                         fire = false;
                     }
                 }
