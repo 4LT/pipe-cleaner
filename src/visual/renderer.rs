@@ -39,6 +39,7 @@ pub struct Renderer<'a> {
     device: wgpu::Device,
     surface_config: wgpu::SurfaceConfiguration,
     surface: wgpu::Surface<'a>,
+    texture: wgpu::Texture,
     depth_texture: wgpu::Texture,
     uniforms: wgpu::Buffer,
     pipeline: wgpu::RenderPipeline,
@@ -224,7 +225,7 @@ impl<'a> Renderer<'a> {
                 }),
                 label: None,
                 multisample: wgpu::MultisampleState {
-                    count: 1,
+                    count: 4,
                     mask: !0,
                     alpha_to_coverage_enabled: false,
                 },
@@ -244,17 +245,30 @@ impl<'a> Renderer<'a> {
         };
         surface.configure(&device, &surf_config);
 
-        let depth_extent = wgpu::Extent3d {
+        let texture_extent = wgpu::Extent3d {
             width,
             height,
             depth_or_array_layers: 1,
         };
 
+        let texture_desc = wgpu::TextureDescriptor {
+            label: Some("texture"),
+            size: texture_extent,
+            mip_level_count: 1,
+            sample_count: 4,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Bgra8Unorm,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[],
+        };
+
+        let texture = device.create_texture(&texture_desc);
+
         let depth_tex_desc = wgpu::TextureDescriptor {
             label: Some("depth_texture"),
-            size: depth_extent,
+            size: texture_extent,
             mip_level_count: 1,
-            sample_count: 1,
+            sample_count: 4,
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::Depth24Plus,
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
@@ -270,6 +284,7 @@ impl<'a> Renderer<'a> {
             device,
             surface_config: surf_config,
             surface,
+            texture,
             depth_texture,
             uniforms: uniform_buffer,
             pipeline: render_pipeline,
@@ -294,17 +309,30 @@ impl<'a> Renderer<'a> {
 
             self.surface.configure(&self.device, &self.surface_config);
 
-            let depth_extent = wgpu::Extent3d {
+            let texture_extent = wgpu::Extent3d {
                 width,
                 height,
                 depth_or_array_layers: 1,
             };
 
+            let texture_desc = wgpu::TextureDescriptor {
+                label: Some("texture"),
+                size: texture_extent,
+                mip_level_count: 1,
+                sample_count: 4,
+                dimension: wgpu::TextureDimension::D2,
+                format: wgpu::TextureFormat::Bgra8Unorm,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+                view_formats: &[],
+            };
+
+            self.texture = self.device.create_texture(&texture_desc);
+
             let depth_tex_desc = wgpu::TextureDescriptor {
                 label: Some("depth_texture"),
-                size: depth_extent,
+                size: texture_extent,
                 mip_level_count: 1,
-                sample_count: 1,
+                sample_count: 4,
                 dimension: wgpu::TextureDimension::D2,
                 format: wgpu::TextureFormat::Depth24Plus,
                 usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
@@ -333,6 +361,9 @@ impl<'a> Renderer<'a> {
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
 
+        let texture_view =
+            self.texture.create_view(&Default::default());
+
         let depth_texture_view =
             self.depth_texture.create_view(&Default::default());
 
@@ -347,8 +378,8 @@ impl<'a> Renderer<'a> {
                 encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                     color_attachments: &[Some(
                         wgpu::RenderPassColorAttachment {
-                            view: &out_color,
-                            resolve_target: None,
+                            view: &texture_view,
+                            resolve_target: Some(&out_color),
                             ops: wgpu::Operations {
                                 load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
                                 store: wgpu::StoreOp::Store,
