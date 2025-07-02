@@ -17,18 +17,20 @@ pub const FRAME_DURATION_F32: f32 = FRAME_DURATION as f32;
 fn main() -> Result<(), String> {
     let cube_vertices = geo::cube_pts();
     let cube_indices = geo::cube_indices();
-    let bullet_vertices = geo::bullet_pts(0.1);
+    let bullet_vertices = geo::bullet_pts(0.2);
     let bullet_indices = geo::bullet_indices();
 
-    let cube_mesh = visual::Mesh {
+    let cube_mesh = (visual::BaseMesh {
         vertices: cube_vertices,
         indices: cube_indices,
-    };
+    })
+    .thicken();
 
-    let bullet_mesh = visual::Mesh {
+    let bullet_mesh = (visual::BaseMesh {
         vertices: bullet_vertices,
         indices: bullet_indices,
-    };
+    })
+    .thicken();
 
     let mut vis_mgr_builder = visual::ManagerBuilder::new();
     let mut world = World::new(&mut vis_mgr_builder, 20);

@@ -1,4 +1,4 @@
-use crate::{visual, World};
+use crate::{World, visual};
 use std::cell::{Ref, RefCell};
 use std::collections::HashSet;
 use std::hash::{Hash, Hasher};

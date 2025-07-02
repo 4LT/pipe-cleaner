@@ -1,10 +1,10 @@
 use crate::FRAME_DURATION_F32;
-use crate::{entity, visual, PipePosition};
+use crate::{PipePosition, entity, visual};
 use entity::EntRef;
 use std::cell::RefCell;
 use std::rc::Rc;
-use visual::geo;
 use visual::WorldPosition;
+use visual::geo;
 
 const RING_RADIUS: f32 = 1.07;
 const ZOOM_SPEED: f32 = 6.0;
@@ -19,7 +19,7 @@ impl World {
     pub fn new(builder: &mut visual::ManagerBuilder, ring_ct: u32) -> Self {
         let vertices = geo::circle_pts(20, RING_RADIUS);
         let indices = geo::loop_indices(20);
-        let ring_mesh = visual::Mesh { vertices, indices };
+        let ring_mesh = (visual::BaseMesh { vertices, indices }).thicken();
         let ring_model = builder.register_model(ring_mesh);
         let progress = Rc::new(RefCell::new(0.0));
 
@@ -62,7 +62,7 @@ impl World {
     pub fn update(&mut self) {
         self.update_logic();
         self.update_physics();
-        *self.progress.borrow_mut()+= FRAME_DURATION_F32;
+        *self.progress.borrow_mut() += FRAME_DURATION_F32;
     }
 
     fn update_logic(&mut self) {
@@ -144,7 +144,7 @@ impl visual::Instance for RingInstance {
     }
 
     fn color(&self) -> visual::Color {
-        [1f32, 1f32, 1f32]
+        [0.55f32, 0.55f32, 0.55f32]
     }
 
     fn model(&self) -> usize {

@@ -13,9 +13,56 @@ const IDENTITY: [f32; 12] = [
 ];
 
 #[derive(Clone)]
-pub struct Mesh {
+pub struct BaseMesh {
     pub indices: Box<[u32]>,
     pub vertices: Box<[[f32; 3]]>,
+}
+
+#[derive(Clone, Copy)]
+pub struct ThickMeshVertex {
+    pub this_position: [f32; 3],
+    pub other_position: [f32; 3],
+}
+
+#[derive(Clone)]
+pub struct ThickMesh {
+    pub indices: Box<[u32]>,
+    pub vertices: Box<[ThickMeshVertex]>,
+}
+
+impl BaseMesh {
+    pub fn thicken(self) -> ThickMesh {
+        let mut new_indices = Vec::with_capacity(self.indices.len() * 3);
+
+        let mut new_vertices = Vec::with_capacity(self.indices.len() * 2);
+        let mut segment_iter = self.indices.chunks(2);
+
+        for segment in segment_iter {
+            let vertex_template = ThickMeshVertex {
+                this_position: self.vertices[segment[0] as usize],
+                other_position: self.vertices[segment[1] as usize],
+            };
+
+            new_vertices.push(vertex_template);
+            new_vertices.push(vertex_template);
+            new_vertices.push(vertex_template);
+            new_vertices.push(vertex_template);
+
+            let idx1 = (new_vertices.len() - 4) as u32;
+
+            new_indices.push(idx1);
+            new_indices.push(idx1 + 1);
+            new_indices.push(idx1 + 2);
+            new_indices.push(idx1 + 2);
+            new_indices.push(idx1 + 3);
+            new_indices.push(idx1);
+        }
+
+        ThickMesh {
+            indices: new_indices.into(),
+            vertices: new_vertices.into(),
+        }
+    }
 }
 
 pub type Attributes = [u8; 64];
@@ -81,7 +128,7 @@ pub struct Model {
 
 impl Model {
     fn new(
-        mesh: Mesh,
+        mesh: ThickMesh,
         index_start: u32,
         index_buffer: &wgpu::Buffer,
         vertex_start: u32,
@@ -96,11 +143,16 @@ impl Model {
         let vertex_bytes: Vec<u8> = mesh
             .vertices
             .iter()
-            .flat_map(|arr| arr.iter().flat_map(|f| f.to_ne_bytes()))
+            .flat_map(|v| {
+                v.this_position.iter().flat_map(|f| f.to_ne_bytes()).chain(
+                    v.other_position.iter().flat_map(|f| f.to_ne_bytes()),
+                )
+            })
             .collect();
 
         let index_offset = index_start as u64 * size_of::<u32>() as u64;
-        let vertex_offset = vertex_start as u64 * size_of::<[f32; 3]>() as u64;
+        let vertex_offset =
+            vertex_start as u64 * size_of::<ThickMeshVertex>() as u64;
 
         index_buffer
             .slice(index_offset..(index_offset + index_bytes.len() as u64))
@@ -127,7 +179,7 @@ impl Model {
 }
 
 pub struct ManagerBuilder {
-    meshes: Vec<Mesh>,
+    meshes: Vec<ThickMesh>,
 }
 
 impl ManagerBuilder {
@@ -135,7 +187,7 @@ impl ManagerBuilder {
         Self { meshes: Vec::new() }
     }
 
-    pub fn register_model(&mut self, mesh: Mesh) -> usize {
+    pub fn register_model(&mut self, mesh: ThickMesh) -> usize {
         let model_idx = self.meshes.len();
         self.meshes.push(mesh);
         model_idx
@@ -155,7 +207,7 @@ pub struct Manager {
 
 impl Manager {
     fn new(
-        meshes: Box<[Mesh]>,
+        meshes: Box<[ThickMesh]>,
         max_instances: u32,
         device: &wgpu::Device,
     ) -> Self {
@@ -178,7 +230,7 @@ impl Manager {
 
         let vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("vertex_buffer"),
-            size: vert_ct_sum * size_of::<[f32; 3]>() as u64,
+            size: vert_ct_sum * size_of::<ThickMeshVertex>() as u64,
             usage: wgpu::BufferUsages::VERTEX,
             mapped_at_creation: true,
         });

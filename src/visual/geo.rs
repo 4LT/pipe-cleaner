@@ -44,13 +44,12 @@ pub fn cube_indices() -> Box<[u32]> {
 
 pub fn bullet_pts(length: f32) -> Box<[[f32; 3]]> {
     vec![
-        [0.0, -0.002, -length / 2.0],
-        [0.0, -0.002, length / 2.0],
-        [0.0, 0.002, -length / 2.0],
-        [0.0, 0.002,length / 2.0],
-    ].into()
+        [0.0, 0.0, -length / 2.0],
+        [0.0, 0.0, length / 2.0],
+    ]
+    .into()
 }
 
 pub fn bullet_indices() -> Box<[u32]> {
-    vec![0, 1, 2, 3].into()
+    vec![0, 1].into()
 }

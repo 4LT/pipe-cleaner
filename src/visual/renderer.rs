@@ -54,8 +54,8 @@ impl<'a> Renderer<'a> {
     ) -> Result<Renderer<'a>, String> {
         let (width, height) = window.size();
 
-        let backends = wgpu::Backends::from_env()
-            .unwrap_or_else(wgpu::Backends::all);
+        let backends =
+            wgpu::Backends::from_env().unwrap_or_else(wgpu::Backends::all);
 
         let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
             backends,
@@ -161,19 +161,22 @@ impl<'a> Renderer<'a> {
         });
 
         let vert_layout = wgpu::VertexBufferLayout {
-            array_stride: std::mem::size_of::<[f32; 3]>() as u64,
+            array_stride: std::mem::size_of::<visual::ThickMeshVertex>() as u64,
             step_mode: wgpu::VertexStepMode::Vertex,
-            attributes: &wgpu::vertex_attr_array![0 => Float32x3],
+            attributes: &wgpu::vertex_attr_array![
+                0 => Float32x3,
+                1 => Float32x3,
+            ],
         };
 
         let inst_layout = wgpu::VertexBufferLayout {
             array_stride: std::mem::size_of::<[[f32; 4]; 4]>() as u64,
             step_mode: wgpu::VertexStepMode::Instance,
             attributes: &wgpu::vertex_attr_array![
-                1 => Float32x4,
                 2 => Float32x4,
                 3 => Float32x4,
-                4 => Float32x3,
+                4 => Float32x4,
+                5 => Float32x3,
             ],
         };
 
@@ -204,7 +207,7 @@ impl<'a> Renderer<'a> {
                     compilation_options: Default::default(),
                 }),
                 primitive: wgpu::PrimitiveState {
-                    topology: wgpu::PrimitiveTopology::LineList,
+                    topology: wgpu::PrimitiveTopology::TriangleList,
                     strip_index_format: None,
                     front_face: wgpu::FrontFace::Ccw,
                     cull_mode: None,
@@ -277,7 +280,7 @@ impl<'a> Renderer<'a> {
 
     pub fn render<'r, 'i>(
         &'r mut self,
-        dimensions@(width, height): (u32, u32),
+        dimensions @ (width, height): (u32, u32),
         instances: impl Iterator<Item = &'i dyn visual::Instance> + 'i,
     ) where
         'r: 'i,
@@ -308,9 +311,7 @@ impl<'a> Renderer<'a> {
                 view_formats: &[],
             };
 
-            self.depth_texture = self
-                .device
-                .create_texture(&depth_tex_desc);
+            self.depth_texture = self.device.create_texture(&depth_tex_desc);
 
             self.window_dimensions = dimensions;
         }
@@ -332,9 +333,8 @@ impl<'a> Renderer<'a> {
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
 
-        let depth_texture_view = self
-            .depth_texture
-            .create_view(&Default::default());
+        let depth_texture_view =
+            self.depth_texture.create_view(&Default::default());
 
         let mut encoder = self.device.create_command_encoder(
             &wgpu::CommandEncoderDescriptor {
