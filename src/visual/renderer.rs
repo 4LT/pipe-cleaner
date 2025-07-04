@@ -6,6 +6,7 @@ pub struct Camera {
     vfov: f32,
     w_h_ratio: f32,
     far_z: f32,
+    pixel_height: f32,
 }
 
 impl Camera {
@@ -27,8 +28,13 @@ impl Camera {
             .into_iter()
             .flat_map(|f| f.to_ne_bytes())
             .chain(self.scale().into_iter().flat_map(|f| f.to_ne_bytes()))
-            .chain([0u8, 0u8, 0u8, 0u8])
+            .chain(self.pixel_height.to_ne_bytes())
             .collect()
+    }
+
+    pub fn update_width_height(&mut self, w: f32, h: f32) {
+        self.w_h_ratio = w / h;
+        self.pixel_height = h;
     }
 }
 
@@ -117,6 +123,7 @@ impl<'a> Renderer<'a> {
             w_h_ratio: width as f32 / height as f32,
             far_z: 20f32,
             pos: [0f32, 0f32, 0f32],
+            pixel_height: height as f32,
         };
 
         let cam_bytes = cam.into_bytes();
@@ -344,7 +351,7 @@ impl<'a> Renderer<'a> {
             self.window_dimensions = dimensions;
         }
 
-        self.cam.w_h_ratio = width as f32 / height as f32;
+        self.cam.update_width_height(width as f32, height as f32);
         let cam_bytes = self.cam.into_bytes();
 
         self.queue.write_buffer(&self.uniforms, 0u64, &cam_bytes);
