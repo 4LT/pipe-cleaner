@@ -1,6 +1,15 @@
+cargo-features = ["per-package-target"]
+
 [package]
-name = "game"
+name = "pipe-cleaner-base-game"
 version = "0.1.0"
 edition = "2024"
+forced-target = "wasm32-unknown-unknown"
+
+[lib]
+name = "base_game"
+path = "src/lib.rs"
+crate-type = ["cdylib"]
+bench = false
 
 [dependencies]
