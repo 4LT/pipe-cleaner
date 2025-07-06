@@ -35,9 +35,9 @@ impl BaseMesh {
         let mut new_indices = Vec::with_capacity(self.indices.len() * 3);
 
         let mut new_vertices = Vec::with_capacity(self.indices.len() * 2);
-        let mut segment_iter = self.indices.chunks(2);
+        let segments = self.indices.chunks(2);
 
-        for segment in segment_iter {
+        for segment in segments {
             let vertex_template = ThickMeshVertex {
                 this_position: self.vertices[segment[0] as usize],
                 other_position: self.vertices[segment[1] as usize],

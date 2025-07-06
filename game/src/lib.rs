@@ -2,6 +2,7 @@
 #![feature(sync_unsafe_cell)]
 #![feature(ptr_as_ref_unchecked)]
 
+use core::arch::wasm32::unreachable;
 use core::cell::SyncUnsafeCell;
 use core::fmt::Write;
 use core::panic::PanicInfo;
@@ -13,13 +14,13 @@ const PANIC_MESSAGE_SZ: usize = 256;
 #[derive(Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 enum PanicCode {
-    CompleteReport,
-    BadReport,
-    WriteAborted,
+    NoPanic = 0,
+    CompleteReport = 1,
+    WriteAborted = 2,
 }
 
-#[derive(Clone, Copy)]
 #[repr(C)]
+#[derive(Clone, Copy)]
 pub struct PanicReport {
     code: PanicCode,
     length: u32,
@@ -29,7 +30,7 @@ pub struct PanicReport {
 impl PanicReport {
     const fn new() -> Self {
         PanicReport {
-            code: PanicCode::BadReport,
+            code: PanicCode::NoPanic,
             length: 0,
             message: [0; _],
         }
@@ -86,16 +87,18 @@ fn panic(info: &PanicInfo) -> ! {
             PanicWriter(unsafe { report.as_mut_unchecked() }),
             "{}",
             info.message()
-        ).unwrap();
+        )
+        .unwrap();
 
         unsafe { (*report).code = PanicCode::CompleteReport };
     }
 
-    loop {}
+    unreachable();
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn add(left: u8, right: u8) -> u8 {
     left.checked_add(right)
-        .expect("Sum of {left} and {right} overflows")
+        .ok_or_else(|| panic!("Sum of {left} and {right} overflows"))
+        .unwrap()
 }

@@ -15,11 +15,13 @@ pub fn loop_indices(vert_count: u32) -> Box<[u32]> {
         .collect()
 }
 
+/*
 pub fn path_indices(vert_count: u32) -> Box<[u32]> {
     (0u32..vert_count - 1)
         .flat_map(|idx| [idx, idx + 1])
         .collect()
 }
+*/
 
 pub fn cube_pts() -> Box<[[f32; 3]]> {
     vec![

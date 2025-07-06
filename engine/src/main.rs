@@ -1,5 +1,6 @@
 mod entity;
 mod visual;
+mod wasm;
 mod world;
 
 use entity::{EntRef, PipePosition};
@@ -15,6 +16,18 @@ pub const FRAME_DURATION: f64 = 1f64 / 120f64;
 pub const FRAME_DURATION_F32: f32 = FRAME_DURATION as f32;
 
 fn main() -> Result<(), String> {
+    let res =
+        wasm::Host::new("target/wasm32-unknown-unknown/release/base_game.wasm");
+
+    match res {
+        Ok(host) => {
+            if let Err(e) = host.run() {
+                eprintln!("{e}");
+            }
+        }
+        Err(e) => eprintln!("{}", e),
+    }
+
     let cube_vertices = geo::cube_pts();
     let cube_indices = geo::cube_indices();
     let bullet_vertices = geo::bullet_pts(0.2);

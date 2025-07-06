@@ -92,7 +92,7 @@ impl PartialEq for HashEnt {
 }
 
 impl HashEnt {
-    fn borrow(&self) -> Ref<Entity> {
+    fn borrow(&self) -> Ref<'_, Entity> {
         (*self.0).borrow()
     }
 }
