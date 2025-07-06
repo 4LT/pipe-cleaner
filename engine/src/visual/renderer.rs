@@ -368,8 +368,7 @@ impl<'a> Renderer<'a> {
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
 
-        let texture_view =
-            self.texture.create_view(&Default::default());
+        let texture_view = self.texture.create_view(&Default::default());
 
         let depth_texture_view =
             self.depth_texture.create_view(&Default::default());
