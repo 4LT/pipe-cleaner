@@ -1,7 +1,15 @@
+cargo-features = ["profile-rustflags"]
+
 [workspace]
 members = [
     "engine",
     "game",
 ]
 resolver = "2"
+
+[profile.release]
+rustflags = ["-Zwasm-c-abi=spec"]
+
+[profile.dev]
+rustflags = ["-Zwasm-c-abi=spec"]
 

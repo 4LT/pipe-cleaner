@@ -1,4 +1,4 @@
-cargo-features = ["per-package-target", "profile-rustflags"]
+cargo-features = ["per-package-target"]
 
 [package]
 name = "pipe-cleaner-base-game"
@@ -11,11 +11,5 @@ name = "base_game"
 path = "src/lib.rs"
 crate-type = ["cdylib"]
 bench = false
-
-[profile.release]
-rustflags = ["-Zwasm-c-abi=spec"]
-
-[profile.dev]
-rustflags = ["-Zwasm-c-abi=spec"]
 
 [dependencies]
