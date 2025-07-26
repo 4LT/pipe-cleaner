@@ -151,3 +151,75 @@ impl visual::Instance for RingInstance {
         self.model
     }
 }
+
+use crate::wasm_entity::{Allocator, EngineFields, Entity, Handle};
+use bytemuck::{
+    cast_slice_mut, must_cast_mut, must_cast_ref, must_cast_slice_mut,
+};
+
+#[derive(Default)]
+pub struct WasmWorld {
+    allocator: Allocator,
+}
+
+impl WasmWorld {
+    pub fn create_entity(&mut self) -> Handle {
+        self.allocator.alloc()
+    }
+
+    pub fn remove_entity(&mut self, handle: Handle) -> bool {
+        self.allocator.free(handle)
+    }
+
+    pub fn write_entity_to_guest(
+        &self,
+        handle: Handle,
+        guest_memory: &mut [u8],
+    ) -> bool {
+        if std::mem::align_of_val(guest_memory) >= 4 {
+            return false;
+        }
+
+        self.allocator
+            .entity(handle)
+            .inspect(|&e| {
+                let entity_bytes: &[u8; size_of::<Entity>()] = must_cast_ref(e);
+
+                guest_memory.copy_from_slice(entity_bytes);
+
+                let engine_bytes =
+                    &mut guest_memory[..size_of::<EngineFields>()];
+
+                let engine_fields = cast_slice_mut::<_, u32>(engine_bytes);
+
+                for field in engine_fields {
+                    *field = field.to_le();
+                }
+            })
+            .is_some()
+    }
+
+    pub fn read_entity_from_guest(
+        &mut self,
+        handle: Handle,
+        guest_memory: &[u8],
+    ) -> bool {
+        if let Some(e) = self.allocator.entity_mut(handle) {
+            let entity_bytes: &mut [u8; size_of::<Entity>()] = must_cast_mut(e);
+
+            entity_bytes.copy_from_slice(guest_memory);
+
+            let engine_bytes = &mut entity_bytes[..size_of::<EngineFields>()];
+
+            let engine_fields = cast_slice_mut::<_, u32>(engine_bytes);
+
+            for field in engine_fields {
+                *field = u32::from_le(*field);
+            }
+
+            true
+        } else {
+            false
+        }
+    }
+}

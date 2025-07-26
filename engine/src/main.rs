@@ -1,6 +1,7 @@
 mod entity;
 mod visual;
 mod wasm;
+mod wasm_entity;
 mod world;
 
 use entity::{EntRef, PipePosition};
@@ -25,7 +26,7 @@ fn main() -> Result<(), String> {
                 eprintln!("{e}");
             }
         }
-        Err(e) => eprintln!("{}", e),
+        Err(e) => eprintln!("{e}"),
     }
 
     let cube_vertices = geo::cube_pts();

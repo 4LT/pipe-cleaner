@@ -102,3 +102,44 @@ pub extern "C" fn add(left: u8, right: u8) -> u8 {
         .ok_or_else(|| panic!("Sum of {left} and {right} overflows"))
         .unwrap()
 }
+
+#[unsafe(no_mangle)]
+pub extern "C" fn create_and_write_entity() -> u64 {
+    let handle = unsafe { PIPECLEANER_create_entity() };
+    let position = [(13.7_f32).to_bits(), (3.2_f32).to_bits()];
+    let mut entity = [0u32; 31];
+
+    if unsafe { PIPECLEANER_get_entity(handle, entity.as_mut_ptr()) } != 0 {
+        panic!("Failed to acquire entity");
+    }
+
+    entity[0..2].copy_from_slice(&position[..]);
+
+    if unsafe { PIPECLEANER_write_entity_back(handle, entity.as_ptr()) } != 0 {
+        panic!("Failed to write entity back");
+    }
+
+    handle
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn read_and_remove_entity(handle: u64) -> f32 {
+    let mut entity = [0u32; 31];
+
+    if unsafe { PIPECLEANER_get_entity(handle, entity.as_mut_ptr()) } != 0 {
+        panic!("Failed to get entity");
+    }
+
+    if unsafe { PIPECLEANER_remove_entity(handle) } != 0 {
+        panic!("Failed to remove entity");
+    }
+
+    f32::from_bits(entity[0]) + f32::from_bits(entity[1])
+}
+
+unsafe extern "C" {
+    fn PIPECLEANER_create_entity() -> u64;
+    fn PIPECLEANER_get_entity(handle: u64, ptr: *mut u32) -> u32;
+    fn PIPECLEANER_write_entity_back(handle: u64, ptr: *const u32) -> u32;
+    fn PIPECLEANER_remove_entity(handle: u64) -> u32;
+}

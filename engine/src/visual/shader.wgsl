@@ -26,7 +26,7 @@ var<uniform> cam: CameraUniforms;
 
 const FOG = vec4<f32>(0.0, 0.0, 0.0, 0.95);
 const POST_MULTIPLY = 1.1;
-const LINE_WIDTH = 3.0;
+const LINE_WIDTH = 5.0;
 
 fn transform_position(
     mdl2world: mat3x4<f32>,
