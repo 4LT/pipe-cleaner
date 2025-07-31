@@ -26,7 +26,7 @@ var<uniform> cam: CameraUniforms;
 
 const FOG = vec4<f32>(0.0, 0.0, 0.0, 0.95);
 const POST_MULTIPLY = 1.1;
-const LINE_WIDTH = 5.0;
+const LINE_WIDTH = 4.0;
 
 fn transform_position(
     mdl2world: mat3x4<f32>,
@@ -77,32 +77,35 @@ fn vs_main(
 
     let delta_norm = normalize(screen_pos2 - screen_pos1);
 
-    let offset = delta_norm.yx * vec2<f32>(-1.0, 1.0)
-        / pixel_dim * LINE_WIDTH;
+    let offset_parallel = delta_norm / pixel_dim * LINE_WIDTH;
+    let offset_ortho = offset_parallel.yx * vec2<f32>(-1.0, 1.0);
 
     let quad_vert_idx = idx % 4;
 
     var quad_vert_pos: vec3<f32>;
     var fog_dist: f32;
 
-    if quad_vert_idx == 0 {
-        quad_vert_pos = pos1_post_proj + vec3<f32>(offset, 0.0);
-        fog_dist = length(view_pos1);
-    }
-
-    if quad_vert_idx == 1 {
-        quad_vert_pos  = pos1_post_proj + vec3<f32>(-offset, 0.0);
-        fog_dist = length(view_pos1);
-    }
-
-    if quad_vert_idx == 2 {
-        quad_vert_pos = pos2_post_proj + vec3<f32>(-offset, 0.0);
-        fog_dist = length(view_pos2);
-    }
-
-    if quad_vert_idx == 3 {
-        quad_vert_pos = pos2_post_proj + vec3<f32>(offset, 0.0);
-        fog_dist = length(view_pos2);
+    switch quad_vert_idx {
+        case 0 {
+            quad_vert_pos = pos1_post_proj
+                + vec3<f32>(offset_ortho - offset_parallel, 0.0);
+            fog_dist = length(view_pos1);
+        }
+        case 1 {
+            quad_vert_pos  = pos1_post_proj
+                + vec3<f32>(-offset_ortho - offset_parallel, 0.0);
+            fog_dist = length(view_pos1);
+        }
+        case 2 {
+            quad_vert_pos = pos2_post_proj
+                + vec3<f32>(-offset_ortho + offset_parallel, 0.0);
+            fog_dist = length(view_pos2);
+        }
+        default {
+            quad_vert_pos = pos2_post_proj
+                + vec3<f32>(offset_ortho + offset_parallel, 0.0);
+            fog_dist = length(view_pos2);
+        }
     }
 
     var frag_in: VertexToPixel;
