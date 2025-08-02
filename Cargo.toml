@@ -4,8 +4,17 @@ cargo-features = ["profile-rustflags"]
 members = [ 
     "engine",
     "game",
+    "shared",
 ]
 resolver = "2"
+
+[workspace.dependencies.bytemuck]
+version = "^1.23.0"
+features = ["must_cast"]
+
+[workspace.dependencies.pipe-cleaner-shared]
+version = "^0.1.0"
+path = "./shared"
 
 [profile.release]
 rustflags = ["-Zwasm-c-abi=spec"]

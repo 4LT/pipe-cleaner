@@ -13,11 +13,12 @@ bench = false
 wgpu = "^25.0.0"
 pollster = "^0.4.0"
 wasmtime = "^35.0.0"
+bytemuck = { workspace = true }
 
 [dependencies.sdl3]
 version = "^0.14.0"
 features = ["raw-window-handle"]
 
-[dependencies.bytemuck]
-version = "^1.23.0"
-features = ["must_cast"]
+[dependencies.pipe-cleaner-shared]
+workspace = true
+features = ["host"]

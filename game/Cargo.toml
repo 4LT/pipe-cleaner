@@ -13,3 +13,14 @@ crate-type = ["cdylib"]
 bench = false
 
 [dependencies]
+talc = "^4.4.3"
+bytemuck = { workspace = true }
+
+[dependencies.spin]
+version =  "^0.9.8"
+default-features = false
+features = ["lock_api", "spin_mutex"]
+
+[dependencies.pipe-cleaner-shared]
+features = ["guest"]
+workspace = true

@@ -2,8 +2,9 @@ use super::{Entity, Handle};
 use bytemuck::{Pod, Zeroable, must_cast, must_cast_mut, must_cast_ref};
 use std::num::{NonZero, NonZeroU32};
 
-pub const FIELD_SZ: usize = size_of::<u32>();
-pub const BLOCK_SZ: usize = 32;
+use pipe_cleaner_shared::{ENTITY_SZ, FIELD_SZ};
+
+pub const BLOCK_SZ: usize = ENTITY_SZ + 1;
 
 #[repr(C, align(4))]
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Pod, Zeroable)]

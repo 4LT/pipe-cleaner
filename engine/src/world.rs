@@ -153,9 +153,7 @@ impl visual::Instance for RingInstance {
 }
 
 use crate::wasm_entity::{Allocator, EngineFields, Entity, Handle};
-use bytemuck::{
-    cast_slice_mut, must_cast_mut, must_cast_ref, must_cast_slice_mut,
-};
+use bytemuck::{cast_slice_mut, must_cast_mut, must_cast_ref};
 
 #[derive(Default)]
 pub struct WasmWorld {
