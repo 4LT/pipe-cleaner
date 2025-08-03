@@ -9,6 +9,7 @@ use std::rc::Rc;
 use wasmtime::{Caller, Engine, Extern, Linker, Module, Store, Val};
 
 pub struct Host {
+    world: Rc<RefCell<WasmWorld>>,
     engine: Engine,
     module: Module,
     linker: Linker<Rc<RefCell<WasmWorld>>>,
@@ -48,7 +49,10 @@ impl Host {
             .func_wrap("env", "PIPECLEANER_remove_entity", remove_entity)
             .map_err(|e| e.to_string())?;
 
+        let world = Rc::new(RefCell::new(WasmWorld::default()));
+
         Ok(Host {
+            world,
             engine,
             module,
             linker,
@@ -56,65 +60,38 @@ impl Host {
     }
 
     pub fn run(&self) -> Result<(), String> {
-        let wasm_world = Rc::new(RefCell::new(WasmWorld::default()));
-        let mut store = Store::new(&self.engine, Rc::clone(&wasm_world));
+        let mut store = Store::new(&self.engine, Rc::clone(&self.world));
 
         let instance = self
             .linker
             .instantiate(&mut store, &self.module)
             .map_err(|e| e.to_string())?;
 
-        let add = instance
-            .get_typed_func::<(u32, u32), u32>(&mut store, "add")
-            .map_err(|e| e.to_string())?;
-
-        let create_and_write = instance
-            .get_typed_func::<(), u64>(&mut store, "create_and_write_entity")
-            .map_err(|e| e.to_string())?;
-
-        let read_and_remove = instance
-            .get_typed_func::<u64, f32>(&mut store, "read_and_remove_entity")
+        let init = instance
+            .get_typed_func::<(), ()>(&mut store, "PIPECLEANER_init")
             .map_err(|e| e.to_string())?;
 
         let panic_report_address = instance
             .get_global(&mut store, "PIPECLEANER_panic_report")
             .ok_or(String::from("Export not found"))?;
 
-        let panic_report_address = match panic_report_address.get(&mut store) {
-            Val::I32(i) => Some(i as usize),
-            _ => None,
-        };
+        if let Err(e) = init.call(&mut store, ()) {
+            return Err(format!("Initialization error: {e}"));
+        } else {
+            for entity in self.world.borrow().entity_iter() {
+                let angle = entity.engine_fields.position.angle;
+                let depth = entity.engine_fields.position.depth;
 
-        let handle = create_and_write
-            .call(&mut store, ())
-            .map_err(|e| e.to_string())?;
-
-        let handle = Handle::from_bits(handle).unwrap();
-        println!(
-            "Handle created, id: {}, index: {}",
-            handle.id(),
-            handle.index()
-        );
-        let handle = handle.bits();
-
-        let sum = read_and_remove
-            .call(&mut store, handle)
-            .map_err(|e| e.to_string())?;
-
-        println!("Entity position sum: {}", sum);
-
-        let arg_lists = [(3, 4), (255, 1)];
-
-        for (x, y) in arg_lists {
-            let result = add.call(&mut store, (x, y));
-
-            match result {
-                Ok(sum) => println!("Calculated sum: {}", sum),
-                _ => (),
+                println!(
+                    "Position: angle: {}, depth: {}",
+                    angle,
+                    depth,
+                );
             }
         }
 
-        if let Some(address) = panic_report_address {
+        if let Val::I32(address) = panic_report_address.get(&mut store) {
+            let address = address as u32 as usize;
             eprintln!("Panic report address: {address}");
 
             let memory = instance.get_memory(&mut store, "memory").unwrap();
@@ -141,7 +118,10 @@ impl Host {
             } else {
                 eprintln!("No panic detected");
             }
+        } else {
+            eprintln!("Failed to find panic report export");
         }
+
 
         Ok(())
     }

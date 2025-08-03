@@ -108,7 +108,7 @@ impl Allocator {
             .map(|block| block.entity_mut())
     }
 
-    pub fn entities(&self) -> impl Iterator<Item = &Entity> {
+    pub fn entity_iter(&self) -> impl Iterator<Item = &Entity> {
         self.memory[1..].iter().filter_map(|block| {
             if block.metadata.id > 0 {
                 Some(must_cast_ref::<_, OccupiedBlock>(block).entity())
@@ -118,7 +118,7 @@ impl Allocator {
         })
     }
 
-    pub fn entities_mut(&mut self) -> impl Iterator<Item = &mut Entity> {
+    pub fn entity_iter_mut(&mut self) -> impl Iterator<Item = &mut Entity> {
         self.memory[1..].iter_mut().filter_map(|block| {
             if block.metadata.id > 0 {
                 Some(must_cast_mut::<_, OccupiedBlock>(block).entity_mut())

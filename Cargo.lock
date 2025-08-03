@@ -1094,9 +1094,7 @@ name = "pipe-cleaner-base-game"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
- "pipe-cleaner-shared",
- "spin",
- "talc",
+ "pipe-cleaner-game-lib",
 ]
 
 [[package]]
@@ -1109,6 +1107,16 @@ dependencies = [
  "sdl3",
  "wasmtime",
  "wgpu",
+]
+
+[[package]]
+name = "pipe-cleaner-game-lib"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "pipe-cleaner-shared",
+ "spin",
+ "talc",
 ]
 
 [[package]]

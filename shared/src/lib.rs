@@ -7,7 +7,7 @@ pub const ENTITY_SZ: usize = 31;
 
 pub type RawFields = [u32; ENTITY_SZ];
 
-#[repr(C, align(4))]
+#[repr(C, packed)]
 #[derive(Clone, Copy, Zeroable, Pod)]
 pub struct EngineFields {
     pub position: PipePosition,
@@ -19,14 +19,14 @@ pub struct EngineFields {
     pub model: u32,
 }
 
-#[repr(C, align(4))]
+#[repr(C, packed)]
 #[derive(Clone, Copy, Zeroable, Pod)]
 pub struct PipePosition {
     pub angle: f32,
     pub depth: f32,
 }
 
-#[repr(C, align(4))]
+#[repr(C, packed)]
 #[derive(Clone, Copy, Zeroable, Pod)]
 pub struct Entity {
     pub engine_fields: EngineFields,

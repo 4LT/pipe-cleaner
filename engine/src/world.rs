@@ -220,4 +220,12 @@ impl WasmWorld {
             false
         }
     }
+
+    pub fn entity_iter(&self) -> impl Iterator<Item=&Entity> {
+        self.allocator.entity_iter()
+    }
+
+    pub fn entity_iter_mut(&mut self) -> impl Iterator<Item=&mut Entity> {
+        self.allocator.entity_iter_mut()
+    }
 }
