@@ -7,7 +7,7 @@ use pipe_cleaner_game_lib::{
 };
 use bytemuck::{Zeroable, Pod};
 
-#[repr(C, packed)]
+#[repr(C, packed(4))]
 #[derive(Clone, Copy, Zeroable, Pod)]
 struct MyFields {
     foo: u32,

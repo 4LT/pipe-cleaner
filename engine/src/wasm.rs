@@ -79,13 +79,10 @@ impl Host {
             return Err(format!("Initialization error: {e}"));
         } else {
             for entity in self.world.borrow().entity_iter() {
-                let angle = entity.engine_fields.position.angle;
-                let depth = entity.engine_fields.position.depth;
-
                 println!(
                     "Position: angle: {}, depth: {}",
-                    angle,
-                    depth,
+                    entity.engine_fields.position.angle,
+                    entity.engine_fields.position.depth,
                 );
             }
         }
